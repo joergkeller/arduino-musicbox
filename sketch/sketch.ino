@@ -14,14 +14,24 @@
  ****************************************************/
 
 #include <Wire.h>
+#include <SPI.h>
+#include <SD.h>
+#include <Adafruit_VS1053.h>
 #include <Adafruit_Trellis.h>
 
 #define NUMKEYS 4
 #define BLINK_DELAY 100
 #define READ_DELAY   50
 
-// Trellis wiring
+// Trellis pin setup
 #define INTPIN 1
+
+// Feather/Wing pin setup
+#define MUSIC_RESET   -1     // VS1053 reset pin (not used!)
+#define CARD_CS        5     // Card chip select pin
+#define MUSIC_CS       6     // VS1053 chip select pin (output)
+#define MUSIC_DCS     10     // VS1053 Data/command select pin (output)
+#define MUSIC_DREQ     9     // VS1053 Data request, ideally an Interrupt pin (not possible on 32u4)
 
 // States
 #define IDLE_LIGHT_UP 1
@@ -31,6 +41,8 @@
 
 
 Adafruit_Trellis trellis = Adafruit_Trellis();
+Adafruit_VS1053_FilePlayer player = Adafruit_VS1053_FilePlayer(MUSIC_RESET, MUSIC_CS, MUSIC_DCS, MUSIC_DREQ, CARD_CS);
+
 unsigned long nextIdleTick = millis();
 unsigned long nextReadTick = millis();
 byte state = IDLE_LIGHT_UP;
@@ -46,10 +58,12 @@ void setup() {
   // INT pin requires a pullup
   pinMode(INTPIN, INPUT_PULLUP);
 
-  initializeTrellis(false);
+  initializeCard();
+  initializePlayer();
+  initializeTrellis(0);
 }
 
-void initializeTrellis(boolean delay) {
+void initializeTrellis(int delay) {
   trellis.begin(0x70);
   //trellis.readSwitches(); // ignore already pressed switches
 
@@ -61,7 +75,32 @@ void initializeTrellis(boolean delay) {
 
   state = IDLE_LIGHT_UP;
   nextLED = 0;
-  nextIdleTick = millis() + (delay ? 1200 : 0);
+  nextIdleTick = millis() + delay;
+}
+
+void initializeCard() {
+  if (!SD.begin(CARD_CS)) {
+    Serial.println(F("SD failed, or not present"));
+    while (1);  // don't do anything more
+  }
+  Serial.println("SD OK!");
+}
+
+void initializePlayer() {
+  if (!player.begin()) { 
+     Serial.println(F("Couldn't find VS1053"));
+     while (1);
+  }
+  Serial.println(F("VS1053 found"));
+  player.softReset();
+  player.sineTest(0x44, 500);    // Make a tone to indicate VS1053 is working
+
+  // Set volume for left, right channels. lower numbers == louder volume!
+  player.setVolume(64,64);
+
+  // Timer interrupts are not suggested, better to use DREQ interrupt!
+  // but we don't have them on the 32u4 feather...
+  player.useInterrupt(VS1053_FILEPLAYER_TIMER0_INT); // timer int
 }
 
 void loop() {
@@ -120,10 +159,12 @@ unsigned int tickReadKeys() {
 void onKey(byte index) {
   if (state == PLAY_SELECTED && playingAlbum == index) {
     // Pressed playing key again
+    stopPlayingAlbum();
     Serial.print("Stopped album #"); Serial.println(index);
-    initializeTrellis(true);
+    initializeTrellis(1200);
   } else {
     // Pressed key to play a new album
+    if (state == PLAY_SELECTED) stopPlayingAlbum();
     trellis.clear();
     trellis.setLED(index);
     trellis.blinkRate(HT16K33_BLINK_1HZ);
@@ -131,8 +172,23 @@ void onKey(byte index) {
   
     state = PLAY_SELECTED;
     playingAlbum = index;
+    playAlbumNew(index);
    
     Serial.print("Playing album #"); Serial.println(index);
   }
+}
+
+void playAlbumNew(byte index) {
+  switch (index) {
+    case 0: player.startPlayingFile("track001.mp3"); break;
+    case 1: player.startPlayingFile("track002.mp3"); break;
+    case 2: player.startPlayingFile("track003.mp3"); break;
+    case 3: player.sineTest(0x44, 500); break;
+  }
+}
+
+void stopPlayingAlbum() {
+  player.stopPlaying();
+  delay(20);
 }
 
