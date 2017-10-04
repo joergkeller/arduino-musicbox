@@ -18,20 +18,25 @@
 
 #define NUMKEYS 4
 #define BLINK_DELAY 100
+#define READ_DELAY   50
 
 // Trellis wiring
 #define INTPIN 1
 
-// Idle show
-#define LIGHT_UP 1
-#define TURN_OFF 2
-#define WAIT_OFF 3
+// States
+#define IDLE_LIGHT_UP 1
+#define IDLE_TURN_OFF 2
+#define IDLE_WAIT_OFF 3
+#define PLAY_SELECTED 4
 
 
 Adafruit_Trellis trellis = Adafruit_Trellis();
 unsigned long nextIdleTick = millis();
-int idleShowState = LIGHT_UP;
-int nextLED = 0;
+unsigned long nextReadTick = millis();
+byte state = IDLE_LIGHT_UP;
+byte nextLED = 0;
+byte playingAlbum;
+
 
 void setup() {
   Serial.begin(14400);
@@ -41,15 +46,22 @@ void setup() {
   // INT pin requires a pullup
   pinMode(INTPIN, INPUT_PULLUP);
 
-  initializeTrellis();
+  initializeTrellis(false);
 }
 
-void initializeTrellis() {
+void initializeTrellis(boolean delay) {
   trellis.begin(0x70);
-  trellis.readSwitches(); // ignore already pressed switches
+  //trellis.readSwitches(); // ignore already pressed switches
+
+  trellis.blinkRate(HT16K33_BLINK_OFF);
   trellis.clear();
   trellis.writeDisplay();
+
   Serial.println("Trellis initialized");
+
+  state = IDLE_LIGHT_UP;
+  nextLED = 0;
+  nextIdleTick = millis() + (delay ? 1200 : 0);
 }
 
 void loop() {
@@ -57,36 +69,70 @@ void loop() {
   if (nextIdleTick <= now) {
     nextIdleTick += tickIdleShow();
   }
+  if (nextReadTick <= now) {
+    nextReadTick += tickReadKeys();
+  }
 }
 
 unsigned int tickIdleShow() {
   // Light up all keys in order
-  if (idleShowState == LIGHT_UP) {
+  if (state == IDLE_LIGHT_UP) {
     trellis.setLED(nextLED);
     trellis.writeDisplay();
     nextLED = (nextLED + 1) % NUMKEYS;
     if (nextLED == 0) {
-      idleShowState = TURN_OFF;
+      state = IDLE_TURN_OFF;
     }
     return BLINK_DELAY;
 
   // Turn off all keys in order
-  } else if (idleShowState == TURN_OFF) {
+  } else if (state == IDLE_TURN_OFF) {
     trellis.clrLED(nextLED);
     trellis.writeDisplay();
     nextLED = (nextLED + 1) % NUMKEYS;
     if (nextLED == 0) {
-      idleShowState = WAIT_OFF;
+      state = IDLE_WAIT_OFF;
       return 2000;
     }
     return BLINK_DELAY;
 
   // Wait in darkness
-  } else if (idleShowState == WAIT_OFF) {
+  } else if (state == IDLE_WAIT_OFF) {
     //Serial.print(".");
     trellis.clear(); // just to clean up
-    idleShowState = LIGHT_UP;
+    state = IDLE_LIGHT_UP;
     return BLINK_DELAY;
+  }
+}
+
+unsigned int tickReadKeys() {
+  if (trellis.readSwitches()) {
+    for (byte i = 0; i < NUMKEYS; i++) {
+      if (trellis.justPressed(i)) {
+        onKey(i);
+        break;
+      }
+    }
+  }
+  return READ_DELAY;
+}
+
+void onKey(byte index) {
+  if (state == PLAY_SELECTED && playingAlbum == index) {
+    // Pressed playing key again
+    Serial.print("Stopped album #"); Serial.println(index);
+    initializeTrellis(true);
+  } else {
+    // Pressed key to play a new album
+    trellis.clear();
+    trellis.setLED(index);
+    trellis.blinkRate(HT16K33_BLINK_1HZ);
+    trellis.writeDisplay();
+  
+    state = PLAY_SELECTED;
+    playingAlbum = index;
+   
+    Serial.print("Playing album #"); Serial.println(index);
   }
 }
 
