@@ -90,15 +90,12 @@ void loop() {
 void initializeTrellis(int delay) {
   trellis.begin(0x70);
   //trellis.readSwitches(); // ignore already pressed switches
+  Serial.println("Trellis initialized");
 
   trellis.blinkRate(HT16K33_BLINK_OFF);
   trellis.clear();
   trellis.writeDisplay();
 
-  Serial.println("Trellis initialized");
-
-  state = IDLE_LIGHT_UP;
-  nextLED = 0;
   nextIdleTick = millis() + delay;
 }
 
@@ -116,7 +113,7 @@ void initializePlayer() {
      while (1);
   }
   player.softReset();
-  player.sineTest(0x44, 500);    // Make a tone to indicate VS1053 is working
+  //player.sineTest(0x44, 500);    // Make a tone to indicate VS1053 is working
 
   // Timer interrupts are not suggested, better to use DREQ interrupt!
   // but we don't have them on the 32u4 feather...
@@ -171,6 +168,9 @@ unsigned int tickReadKeys() {
       }
     }
   }
+  if (state == PLAY_SELECTED) {
+    if (player.stopped()) onStop();
+  }
   return READ_DELAY;
 }
 
@@ -180,20 +180,36 @@ void onKey(byte index) {
     stopPlayingAlbum();
     Serial.print("Stopped album #"); Serial.println(index);
     initializeTrellis(1200);
+    
+    state = IDLE_LIGHT_UP;
+    nextLED = 0;
   } else {
     // Pressed key to play a new album
     if (state == PLAY_SELECTED) stopPlayingAlbum();
-    trellis.clear();
-    trellis.setLED(index);
-    trellis.blinkRate(HT16K33_BLINK_1HZ);
-    trellis.writeDisplay();
+    blinkSelected(index);
   
+    playAlbumNew(index);
+    Serial.print("Playing album #"); Serial.println(index);
+    
     state = PLAY_SELECTED;
     playingAlbum = index;
-    playAlbumNew(index);
-   
-    Serial.print("Playing album #"); Serial.println(index);
   }
+}
+
+void onStop() {
+  stopPlayingAlbum();
+  Serial.print("Stopped album #"); Serial.println(playingAlbum);
+  initializeTrellis(0);
+
+  state = IDLE_LIGHT_UP;
+  nextLED = 0;
+}
+
+void blinkSelected(byte index) {
+  trellis.clear();
+  trellis.setLED(index);
+  trellis.blinkRate(HT16K33_BLINK_1HZ);
+  trellis.writeDisplay();
 }
 
 void playAlbumNew(byte index) {
