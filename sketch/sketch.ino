@@ -39,28 +39,52 @@
 #define IDLE_WAIT_OFF 3
 #define PLAY_SELECTED 4
 
+/*************************************************** 
+ * Variables
+ ****************************************************/
 
 Adafruit_Trellis trellis = Adafruit_Trellis();
 Adafruit_VS1053_FilePlayer player = Adafruit_VS1053_FilePlayer(MUSIC_RESET, MUSIC_CS, MUSIC_DCS, MUSIC_DREQ, CARD_CS);
 
-unsigned long nextIdleTick = millis();
 unsigned long nextReadTick = millis();
+unsigned long nextIdleTick = millis();
 byte state = IDLE_LIGHT_UP;
 byte nextLED = 0;
 byte playingAlbum;
 
 
+/*************************************************** 
+ * Setup
+ ****************************************************/
 void setup() {
   Serial.begin(14400);
-  while (!Serial) delay(1);
   Serial.println("MusicBox setup");
   
-  // INT pin requires a pullup
+  // INT pin requires a pullup;
+  // this is also the MIDI Tx pin recommended to bound to high
   pinMode(INTPIN, INPUT_PULLUP);
 
   initializeCard();
   initializePlayer();
   initializeTrellis(0);
+}
+
+/*************************************************** 
+ * Loop
+ ****************************************************/
+void loop() {
+  unsigned long now = millis();
+  if (nextReadTick > now + (1000L * 60L * 60L)) {
+    Serial.println("Rollover timer ticks!");
+    nextReadTick = now;
+    nextIdleTick = now;
+  }
+  if (nextReadTick <= now) {
+    nextReadTick += tickReadKeys();
+  }
+  if (nextIdleTick <= now) {
+    nextIdleTick += tickIdleShow();
+  }
 }
 
 void initializeTrellis(int delay) {
@@ -83,7 +107,7 @@ void initializeCard() {
     Serial.println(F("SD failed, or not present"));
     while (1);  // don't do anything more
   }
-  Serial.println("SD OK!");
+  Serial.println("SD initialized");
 }
 
 void initializePlayer() {
@@ -91,26 +115,20 @@ void initializePlayer() {
      Serial.println(F("Couldn't find VS1053"));
      while (1);
   }
-  Serial.println(F("VS1053 found"));
   player.softReset();
   player.sineTest(0x44, 500);    // Make a tone to indicate VS1053 is working
-
-  // Set volume for left, right channels. lower numbers == louder volume!
-  player.setVolume(64,64);
 
   // Timer interrupts are not suggested, better to use DREQ interrupt!
   // but we don't have them on the 32u4 feather...
   player.useInterrupt(VS1053_FILEPLAYER_TIMER0_INT); // timer int
-}
-
-void loop() {
-  unsigned long now = millis();
-  if (nextIdleTick <= now) {
-    nextIdleTick += tickIdleShow();
-  }
-  if (nextReadTick <= now) {
-    nextReadTick += tickReadKeys();
-  }
+  Serial.println(F("VS1053 initialized"));
+  
+  // Set volume for left, right channels. lower numbers == louder volume!
+  //   0: max volume
+  // 130: audible 
+  // 254: min volume
+  // 255: analog off
+  player.setVolume(64, 64);
 }
 
 unsigned int tickIdleShow() {
