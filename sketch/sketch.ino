@@ -51,6 +51,7 @@ unsigned long nextIdleTick = millis();
 byte state = IDLE_LIGHT_UP;
 byte nextLED = 0;
 byte playingAlbum;
+File album;
 
 
 /*************************************************** 
@@ -58,6 +59,7 @@ byte playingAlbum;
  ****************************************************/
 void setup() {
   Serial.begin(14400);
+  while (!Serial);
   Serial.println("MusicBox setup");
   
   // INT pin requires a pullup;
@@ -105,6 +107,19 @@ void initializeCard() {
     while (1);  // don't do anything more
   }
   Serial.println("SD initialized");
+
+  File root = SD.open("/");
+  while(true) {
+    File entry = root.openNextFile();
+    if (!entry) break;
+    Serial.print(entry.name());
+    if (entry.isDirectory()) {
+      Serial.println("/");
+    } else {
+      Serial.print("\t\t");
+      Serial.println(entry.size(), DEC);
+    }
+  }
 }
 
 void initializePlayer() {
@@ -175,34 +190,42 @@ unsigned int tickReadKeys() {
 }
 
 void onKey(byte index) {
+  // Same key pressed again
   if (state == PLAY_SELECTED && playingAlbum == index) {
-    // Pressed playing key again
-    stopPlayingAlbum();
-    Serial.print("Stopped album #"); Serial.println(index);
-    initializeTrellis(1200);
-    
-    state = IDLE_LIGHT_UP;
-    nextLED = 0;
+    stopPlaying();
+    onStop();
+
+  // Some (other) key pressed
   } else {
-    // Pressed key to play a new album
-    if (state == PLAY_SELECTED) stopPlayingAlbum();
     blinkSelected(index);
-  
-    playAlbumNew(index);
-    Serial.print("Playing album #"); Serial.println(index);
-    
-    state = PLAY_SELECTED;
-    playingAlbum = index;
+    if (state == PLAY_SELECTED) stopPlaying();
+    openNewAlbum(index);
+    if (playNextTrack()) {
+      Serial.print("Playing album #"); Serial.println(index);
+      state = PLAY_SELECTED;
+      playingAlbum = index;
+    } else {
+      if (album && album.isDirectory()) album.close();
+      Serial.print("Failed album #"); Serial.println(index);
+      initializeTrellis(1200);
+      state = IDLE_LIGHT_UP;
+      nextLED = 0;
+    }
   }
 }
 
 void onStop() {
-  stopPlayingAlbum();
-  Serial.print("Stopped album #"); Serial.println(playingAlbum);
-  initializeTrellis(0);
-
-  state = IDLE_LIGHT_UP;
-  nextLED = 0;
+  if (playNextTrack()) {
+    Serial.print("Playing next track album #"); Serial.println(playingAlbum);
+    blinkSelected(playingAlbum);
+    state = PLAY_SELECTED;
+  } else {
+    if (album && album.isDirectory()) album.close();
+    Serial.print("Ended album #"); Serial.println(playingAlbum);
+    initializeTrellis(1200);
+    state = IDLE_LIGHT_UP;
+    nextLED = 0;
+  }
 }
 
 void blinkSelected(byte index) {
@@ -212,16 +235,30 @@ void blinkSelected(byte index) {
   trellis.writeDisplay();
 }
 
-void playAlbumNew(byte index) {
-  switch (index) {
-    case 0: player.startPlayingFile("track001.mp3"); break;
-    case 1: player.startPlayingFile("track002.mp3"); break;
-    case 2: player.startPlayingFile("track003.mp3"); break;
-    case 3: player.sineTest(0x44, 500); break;
-  }
+boolean openNewAlbum(byte index) {
+  int albumNr = index + 1;
+  String albumTemplate = "ALBUM";
+  String albumName = albumTemplate + albumNr;
+  if (album && album.isDirectory()) album.close();
+  album = SD.open(albumName);
 }
 
-void stopPlayingAlbum() {
+boolean playNextTrack() {
+  if (!album || !album.isDirectory()) return false;
+
+  File track = album.openNextFile();
+  if (!track) return false;
+  String albumName = album.name();
+  String dirPath = albumName + '/';
+  String filePath = dirPath + track.name();
+  Serial.print("Next track: "); Serial.println(filePath);
+  track.close();
+  
+  player.startPlayingFile(filePath.c_str());
+  return true;
+}
+
+void stopPlaying() {
   player.stopPlaying();
   delay(20);
 }
