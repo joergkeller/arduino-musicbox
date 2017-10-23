@@ -42,6 +42,9 @@
 #define MUSIC_DCS     10     // VS1053 Data/command select pin (output)
 #define MUSIC_DREQ     9     // VS1053 Data request, ideally an Interrupt pin (not possible on 32u4)
 
+// Amplifier pin setup
+#define AMPLIFIER_ENABLE 11   // Enable both amplifier channels
+
 // States
 #define IDLE_LIGHT_UP 1
 #define IDLE_TURN_OFF 2
@@ -49,9 +52,10 @@
 #define PLAY_SELECTED 4
 
 // Volume
-#define VOLUME_MIN       130
-#define VOLUME_MAX        20
+#define VOLUME_MIN       130    // max. 254 moderation
+#define VOLUME_MAX        20    // min. 0 moderation
 #define VOLUME_DIRECTION  -1
+#define VOLUME_OFF       254    // 255 = switch audio off, TODO avoiding cracking noise, maybe correct stuffing needed when stop
 
 /*************************************************** 
  * Variables
@@ -75,18 +79,21 @@ int volume = 64;
  * Setup
  ****************************************************/
 void setup() {
+  initializeAmplifier();
+
   Serial.begin(14400);
   while (!Serial && millis() < nextIdleTick + 2000);
   Serial.println("MusicBox setup");
   
-  // INT pin requires a pullup;
-  // this is also the MIDI Tx pin recommended to bound to high
-  pinMode(INTPIN, INPUT_PULLUP);
-
   initializeCard();
   initializePlayer();
   initializeTrellis(0);
   initializeTimer();
+}
+
+void initializeAmplifier() {
+  pinMode(AMPLIFIER_ENABLE, OUTPUT);
+  enableAmplifier(false);
 }
 
 void initializeCard() {
@@ -111,6 +118,10 @@ void initializeCard() {
 }
 
 void initializePlayer() {
+  // INT pin requires a pullup;
+  // this is also the MIDI Tx pin recommended to bound to high
+  pinMode(INTPIN, INPUT_PULLUP);
+
   if (!player.begin()) { 
      Serial.println(F("Couldn't find VS1053"));
      while (1);
@@ -123,12 +134,7 @@ void initializePlayer() {
   player.useInterrupt(VS1053_FILEPLAYER_TIMER0_INT); // timer int
   Serial.println(F("VS1053 initialized"));
   
-  // Set volume for left, right channels. lower numbers == louder volume!
-  //   0: max volume
-  // 130: audible 
-  // 254: min volume
-  // 255: analog off
-  player.setVolume(volume, volume);
+  enablePlayer(false);
 }
 
 void initializeTrellis(int delay) {
@@ -179,7 +185,7 @@ void loop() {
 
   // Check for finished track
   if (state == PLAY_SELECTED) {
-    if (player.stopped()) onStop();
+    if (player.stopped()) onTryNextTrack();
   }
 }
 
@@ -229,10 +235,7 @@ unsigned int tickReadKeys() {
   if (state == PLAY_SELECTED) {
     int encoderChange = encoder.getValue() * VOLUME_DIRECTION;
     if (encoderChange != 0) {
-      volume += encoderChange;
-      volume = max(VOLUME_MAX, min(volume, VOLUME_MIN));
-      Serial.print("Set Volume "); Serial.println(volume);
-      player.setVolume(volume, volume);
+      changeVolume(encoderChange);
     }
   }
   
@@ -243,28 +246,32 @@ void onKey(byte index) {
   // Same key pressed again
   if (state == PLAY_SELECTED && playingAlbum == index) {
     stopPlaying();
-    onStop();
+    onTryNextTrack();
 
   // Some (other) key pressed
   } else {
-    blinkSelected(index);
     if (state == PLAY_SELECTED) stopPlaying();
-    openNewAlbum(index);
-    if (playNextTrack()) {
-      Serial.print("Playing album #"); Serial.println(index);
-      state = PLAY_SELECTED;
-      playingAlbum = index;
-    } else {
-      if (album && album.isDirectory()) album.close();
-      Serial.print("Failed album #"); Serial.println(index);
-      initializeTrellis(1200);
-      state = IDLE_LIGHT_UP;
-      nextLED = 0;
-    }
+    enablePlayer(true);
+    enableAmplifier(true);
+    onStartFirstTrack(index);
   }
 }
 
-void onStop() {
+void onStartFirstTrack(byte index) {
+  playingAlbum = index;
+  blinkSelected(playingAlbum);
+  openNewAlbum(playingAlbum);
+  if (playNextTrack()) {
+    Serial.print("Playing album #"); Serial.println(playingAlbum);
+    state = PLAY_SELECTED;
+  } else {
+    if (album && album.isDirectory()) album.close();
+    Serial.print("Failed album #"); Serial.println(playingAlbum);
+    onStopPlaying();
+  }
+}
+
+void onTryNextTrack() {
   if (playNextTrack()) {
     Serial.print("Playing next track album #"); Serial.println(playingAlbum);
     blinkSelected(playingAlbum);
@@ -272,10 +279,29 @@ void onStop() {
   } else {
     if (album && album.isDirectory()) album.close();
     Serial.print("Ended album #"); Serial.println(playingAlbum);
-    initializeTrellis(1200);
-    state = IDLE_LIGHT_UP;
-    nextLED = 0;
+    onStopPlaying();
   }
+}
+
+void onStopPlaying() {
+  enableAmplifier(false);
+  enablePlayer(false);
+  initializeTrellis(1200);
+  state = IDLE_LIGHT_UP;
+  nextLED = 0;
+}
+
+// Set volume for left, right channels. lower numbers == louder volume!
+//   0: max volume
+//  20: cracks on amplified loudspeaker
+// 130: audible 
+// 254: min volume
+// 255: analog off
+void changeVolume(int encoderChange) {
+  volume += encoderChange;
+  volume = max(VOLUME_MAX, min(volume, VOLUME_MIN));
+  Serial.print("Set Volume "); Serial.println(volume);
+  player.setVolume(volume, volume);
 }
 
 void blinkSelected(byte index) {
@@ -295,15 +321,15 @@ boolean openNewAlbum(byte index) {
 
 boolean playNextTrack() {
   if (!album || !album.isDirectory()) return false;
-
   File track = album.openNextFile();
   if (!track) return false;
+
   String albumName = album.name();
   String dirPath = albumName + '/';
   String filePath = dirPath + track.name();
   Serial.print("Next track: "); Serial.println(filePath);
   track.close();
-  
+
   player.startPlayingFile(filePath.c_str());
   return true;
 }
@@ -311,5 +337,14 @@ boolean playNextTrack() {
 void stopPlaying() {
   player.stopPlaying();
   delay(20);
+}
+
+void enablePlayer(boolean enable) {
+  int vol = enable ? volume : VOLUME_OFF;
+  player.setVolume(vol, vol);
+}
+
+void enableAmplifier(boolean enable) {
+  digitalWrite(AMPLIFIER_ENABLE, enable);
 }
 
