@@ -76,7 +76,7 @@ int volume = 64;
  ****************************************************/
 void setup() {
   Serial.begin(14400);
-  while (!Serial);
+  while (!Serial && millis() < nextIdleTick + 2000);
   Serial.println("MusicBox setup");
   
   // INT pin requires a pullup;
