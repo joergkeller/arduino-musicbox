@@ -2,12 +2,16 @@
   Arduino control code for a music maker board and a trellis keypad.
 
   The control code shall
-   * read trellis keys
-   * on key press play a music file from the micro SD card from a specific folder and blink the respective key
-   * on pressing the same key or when playback stops jump to the next file in the folder, until all music is played
+   * read trellis keys (/)
+   * on key press play a music file from the micro SD card from a specific folder and blink the respective key (/)
+   * on pressing the same key or when playback stops jump to the next file in the folder, until all music is played (/)
    * read the rotary decoder to change the volume, the maximum volume can be configured
    * detect when a headphone is plugged in and mute the amplifier for the internal speakers
    * switch the music box off automatically after an idle period
+
+  Todos:
+   - Serial waits for a max. time
+   - Audio off when idle (volume 255,255)
 
   Written by Jörg Keller, Switzerland  
   MIT license, all text above must be included in any redistribution
@@ -18,6 +22,9 @@
 #include <SD.h>
 #include <Adafruit_VS1053.h>
 #include <Adafruit_Trellis.h>
+#include <ClickEncoder.h>
+#include <TimerOne.h>
+
 
 #define NUMKEYS 4
 #define BLINK_DELAY 100
@@ -39,12 +46,19 @@
 #define IDLE_WAIT_OFF 3
 #define PLAY_SELECTED 4
 
+// Volume
+#define VOLUME_MIN       130
+#define VOLUME_MAX        20
+#define VOLUME_DIRECTION  -1
+
 /*************************************************** 
  * Variables
  ****************************************************/
 
 Adafruit_Trellis trellis = Adafruit_Trellis();
 Adafruit_VS1053_FilePlayer player = Adafruit_VS1053_FilePlayer(MUSIC_RESET, MUSIC_CS, MUSIC_DCS, MUSIC_DREQ, CARD_CS);
+ClickEncoder encoder = ClickEncoder(A1, A0, A2, 2, LOW);
+
 
 unsigned long nextReadTick = millis();
 unsigned long nextIdleTick = millis();
@@ -52,6 +66,7 @@ byte state = IDLE_LIGHT_UP;
 byte nextLED = 0;
 byte playingAlbum;
 File album;
+int volume = 64;
 
 
 /*************************************************** 
@@ -69,36 +84,7 @@ void setup() {
   initializeCard();
   initializePlayer();
   initializeTrellis(0);
-}
-
-/*************************************************** 
- * Loop
- ****************************************************/
-void loop() {
-  unsigned long now = millis();
-  if (nextReadTick > now + (1000L * 60L * 60L)) {
-    Serial.println("Rollover timer ticks!");
-    nextReadTick = now;
-    nextIdleTick = now;
-  }
-  if (nextReadTick <= now) {
-    nextReadTick += tickReadKeys();
-  }
-  if (nextIdleTick <= now) {
-    nextIdleTick += tickIdleShow();
-  }
-}
-
-void initializeTrellis(int delay) {
-  trellis.begin(0x70);
-  //trellis.readSwitches(); // ignore already pressed switches
-  Serial.println("Trellis initialized");
-
-  trellis.blinkRate(HT16K33_BLINK_OFF);
-  trellis.clear();
-  trellis.writeDisplay();
-
-  nextIdleTick = millis() + delay;
+  initializeTimer();
 }
 
 void initializeCard() {
@@ -140,7 +126,54 @@ void initializePlayer() {
   // 130: audible 
   // 254: min volume
   // 255: analog off
-  player.setVolume(64, 64);
+  player.setVolume(volume, volume);
+}
+
+void initializeTrellis(int delay) {
+  trellis.begin(0x70);
+  //trellis.readSwitches(); // ignore already pressed switches
+  Serial.println("Trellis initialized");
+
+  trellis.blinkRate(HT16K33_BLINK_OFF);
+  trellis.clear();
+  trellis.writeDisplay();
+
+  nextIdleTick = millis() + delay;
+}
+
+void initializeTimer() {
+  Timer1.initialize(1000);
+  Timer1.attachInterrupt(timerIsr); 
+  Serial.println("Timer initialized");
+}
+
+/*************************************************** 
+ * Interrupt-Handler
+ ****************************************************/
+void timerIsr() {
+  encoder.service();
+}
+
+/*************************************************** 
+ * Loop
+ ****************************************************/
+void loop() {
+  unsigned long now = millis();
+
+  // Rollover millis since start
+  if (nextReadTick > now + (1000L * 60L * 60L)) {
+    Serial.println("Rollover timer ticks!");
+    nextReadTick = now;
+    nextIdleTick = now;
+  }
+
+  // Next ticks
+  if (nextReadTick <= now) {
+    nextReadTick += tickReadKeys();
+  }
+  if (nextIdleTick <= now) {
+    nextIdleTick += tickIdleShow();
+  }
 }
 
 unsigned int tickIdleShow() {
@@ -184,6 +217,13 @@ unsigned int tickReadKeys() {
     }
   }
   if (state == PLAY_SELECTED) {
+    int encoderChange = encoder.getValue() * VOLUME_DIRECTION;
+    if (encoderChange != 0) {
+      volume += encoderChange;
+      volume = max(VOLUME_MAX, min(volume, VOLUME_MIN));
+      Serial.print("Set Volume "); Serial.println(volume);
+      player.setVolume(volume, volume);
+    }
     if (player.stopped()) onStop();
   }
   return READ_DELAY;
