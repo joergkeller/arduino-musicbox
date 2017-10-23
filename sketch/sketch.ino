@@ -27,8 +27,10 @@
 
 
 #define NUMKEYS 4
-#define BLINK_DELAY 100
-#define READ_DELAY   50
+#define IDLE_PAUSE  2000
+#define BLINK_DELAY  100
+#define READ_DELAY    50
+#define ROLLOVER_GAP (1000L * 60L * 60L)
 
 // Trellis pin setup
 #define INTPIN 1
@@ -161,7 +163,7 @@ void loop() {
   unsigned long now = millis();
 
   // Rollover millis since start
-  if (nextReadTick > now + (1000L * 60L * 60L)) {
+  if (nextReadTick > now + ROLLOVER_GAP) {
     Serial.println("Rollover timer ticks!");
     nextReadTick = now;
     nextIdleTick = now;
@@ -173,6 +175,11 @@ void loop() {
   }
   if (nextIdleTick <= now) {
     nextIdleTick += tickIdleShow();
+  }
+
+  // Check for finished track
+  if (state == PLAY_SELECTED) {
+    if (player.stopped()) onStop();
   }
 }
 
@@ -194,7 +201,7 @@ unsigned int tickIdleShow() {
     nextLED = (nextLED + 1) % NUMKEYS;
     if (nextLED == 0) {
       state = IDLE_WAIT_OFF;
-      return 2000;
+      return IDLE_PAUSE;
     }
     return BLINK_DELAY;
 
@@ -208,6 +215,7 @@ unsigned int tickIdleShow() {
 }
 
 unsigned int tickReadKeys() {
+  // Read trellis keys
   if (trellis.readSwitches()) {
     for (byte i = 0; i < NUMKEYS; i++) {
       if (trellis.justPressed(i)) {
@@ -216,6 +224,8 @@ unsigned int tickReadKeys() {
       }
     }
   }
+
+  // Read encoder position
   if (state == PLAY_SELECTED) {
     int encoderChange = encoder.getValue() * VOLUME_DIRECTION;
     if (encoderChange != 0) {
@@ -224,8 +234,8 @@ unsigned int tickReadKeys() {
       Serial.print("Set Volume "); Serial.println(volume);
       player.setVolume(volume, volume);
     }
-    if (player.stopped()) onStop();
   }
+  
   return READ_DELAY;
 }
 
