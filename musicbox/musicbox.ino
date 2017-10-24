@@ -1,19 +1,18 @@
-/*************************************************** 
+/***************************************************
   Arduino control code for a music maker board and a trellis keypad.
 
   The control code shall
-   * read trellis keys (/)
-   * on key press play a music file from the micro SD card from a specific folder and blink the respective key (/)
-   * on pressing the same key or when playback stops jump to the next file in the folder, until all music is played (/)
-   * read the rotary decoder to change the volume, the maximum volume can be configured
-   * detect when a headphone is plugged in and mute the amplifier for the internal speakers
-   * switch the music box off automatically after an idle period
+     read trellis keys (/)
+     on key press play a music file from the micro SD card from a specific folder and blink the respective key (/)
+     on pressing the same key or when playback stops jump to the next file in the folder, until all music is played (/)
+     read the rotary decoder to change the volume, the maximum volume can be configured (/)
+     detect when a headphone is plugged in and mute the amplifier for the internal speakers (/)
+     switch the music box off automatically after an idle period
 
   Todos:
-   - Serial waits for a max. time
-   - Audio off when idle (volume 255,255)
+   - Audio off when idle (volume 255,255) -> proper file padding needed (?)
 
-  Written by Jörg Keller, Switzerland  
+  Written by Jörg Keller, Switzerland
   MIT license, all text above must be included in any redistribution
  ****************************************************/
 
@@ -33,17 +32,24 @@
 #define ROLLOVER_GAP (1000L * 60L * 60L)
 
 // Trellis pin setup
-#define INTPIN 1
+#define INT_PIN 1
 
 // Feather/Wing pin setup
-#define MUSIC_RESET   -1     // VS1053 reset pin (not used!)
-#define CARD_CS        5     // Card chip select pin
-#define MUSIC_CS       6     // VS1053 chip select pin (output)
-#define MUSIC_DCS     10     // VS1053 Data/command select pin (output)
-#define MUSIC_DREQ     9     // VS1053 Data request, ideally an Interrupt pin (not possible on 32u4)
+#define MUSIC_RESET_PIN   -1     // VS1053 reset pin (not used!)
+#define CARD_CS_PIN        5     // Card chip select pin
+#define MUSIC_CS_PIN       6     // VS1053 chip select pin (output)
+#define MUSIC_DCS_PIN     10     // VS1053 Data/command select pin (output)
+#define MUSIC_DREQ_PIN     9     // VS1053 Data request, ideally an Interrupt pin (not possible on 32u4)
 
 // Amplifier pin setup
-#define AMPLIFIER_ENABLE 11   // Enable both amplifier channels
+#define AMPLIFIER_ENABLE_PIN   11   // Enable both amplifier channels
+#define HEADSET_LEVEL_PIN      A3   // Voltage level indicates headset plugin
+#define HEADSET_THRESHOLD     100   // Plugged-in: ~20, Unplugged: ~890
+
+// Rotary Encoder with Switch
+#define ENCODER_A           A0
+#define ENCODER_B           A1
+#define ENCODER_SWITCH      A2
 
 // States
 #define IDLE_LIGHT_UP 1
@@ -54,16 +60,16 @@
 // Volume
 #define VOLUME_MIN       130    // max. 254 moderation
 #define VOLUME_MAX        20    // min. 0 moderation
-#define VOLUME_DIRECTION  -1
+#define VOLUME_DIRECTION  +1
 #define VOLUME_OFF       254    // 255 = switch audio off, TODO avoiding cracking noise, maybe correct stuffing needed when stop
 
-/*************************************************** 
- * Variables
+/***************************************************
+   Variables
  ****************************************************/
 
 Adafruit_Trellis trellis = Adafruit_Trellis();
-Adafruit_VS1053_FilePlayer player = Adafruit_VS1053_FilePlayer(MUSIC_RESET, MUSIC_CS, MUSIC_DCS, MUSIC_DREQ, CARD_CS);
-ClickEncoder encoder = ClickEncoder(A1, A0, A2, 2, LOW);
+Adafruit_VS1053_FilePlayer player = Adafruit_VS1053_FilePlayer(MUSIC_RESET_PIN, MUSIC_CS_PIN, MUSIC_DCS_PIN, MUSIC_DREQ_PIN, CARD_CS_PIN);
+ClickEncoder encoder = ClickEncoder(ENCODER_A, ENCODER_B, ENCODER_SWITCH, 2, LOW);
 
 
 unsigned long nextReadTick = millis();
@@ -73,10 +79,12 @@ byte nextLED = 0;
 byte playingAlbum;
 File album;
 int volume = 64;
+boolean headset = false;
+boolean headsetFirstMeasure = false;
 
 
-/*************************************************** 
- * Setup
+/***************************************************
+   Setup
  ****************************************************/
 void setup() {
   initializeAmplifier();
@@ -84,7 +92,7 @@ void setup() {
   Serial.begin(14400);
   while (!Serial && millis() < nextIdleTick + 2000);
   Serial.println("MusicBox setup");
-  
+
   initializeCard();
   initializePlayer();
   initializeTrellis(0);
@@ -92,19 +100,20 @@ void setup() {
 }
 
 void initializeAmplifier() {
-  pinMode(AMPLIFIER_ENABLE, OUTPUT);
+  pinMode(AMPLIFIER_ENABLE_PIN, OUTPUT);
+  pinMode(HEADSET_LEVEL_PIN, INPUT_PULLUP);
   enableAmplifier(false);
 }
 
 void initializeCard() {
-  if (!SD.begin(CARD_CS)) {
+  if (!SD.begin(CARD_CS_PIN)) {
     Serial.println(F("SD failed, or not present"));
     while (1);  // don't do anything more
   }
   Serial.println("SD initialized");
 
   File root = SD.open("/");
-  while(true) {
+  while (true) {
     File entry = root.openNextFile();
     if (!entry) break;
     Serial.print(entry.name());
@@ -120,11 +129,11 @@ void initializeCard() {
 void initializePlayer() {
   // INT pin requires a pullup;
   // this is also the MIDI Tx pin recommended to bound to high
-  pinMode(INTPIN, INPUT_PULLUP);
+  pinMode(INT_PIN, INPUT_PULLUP);
 
-  if (!player.begin()) { 
-     Serial.println(F("Couldn't find VS1053"));
-     while (1);
+  if (!player.begin()) {
+    Serial.println(F("Couldn't find VS1053"));
+    while (1);
   }
   player.softReset();
   //player.sineTest(0x44, 500);    // Make a tone to indicate VS1053 is working
@@ -133,7 +142,7 @@ void initializePlayer() {
   // but we don't have them on the 32u4 feather...
   player.useInterrupt(VS1053_FILEPLAYER_TIMER0_INT); // timer int
   Serial.println(F("VS1053 initialized"));
-  
+
   enablePlayer(false);
 }
 
@@ -151,19 +160,19 @@ void initializeTrellis(int delay) {
 
 void initializeTimer() {
   Timer1.initialize(1000);
-  Timer1.attachInterrupt(timerIsr); 
+  Timer1.attachInterrupt(timerIsr);
   Serial.println("Timer initialized");
 }
 
-/*************************************************** 
- * Interrupt-Handler
+/***************************************************
+   Interrupt-Handler
  ****************************************************/
 void timerIsr() {
   encoder.service();
 }
 
-/*************************************************** 
- * Loop
+/***************************************************
+   Loop
  ****************************************************/
 void loop() {
   unsigned long now = millis();
@@ -189,7 +198,7 @@ void loop() {
   }
 }
 
-unsigned int tickIdleShow() {
+unsigned long tickIdleShow() {
   // Light up all keys in order
   if (state == IDLE_LIGHT_UP) {
     trellis.setLED(nextLED);
@@ -200,7 +209,7 @@ unsigned int tickIdleShow() {
     }
     return BLINK_DELAY;
 
-  // Turn off all keys in order
+    // Turn off all keys in order
   } else if (state == IDLE_TURN_OFF) {
     trellis.clrLED(nextLED);
     trellis.writeDisplay();
@@ -211,7 +220,7 @@ unsigned int tickIdleShow() {
     }
     return BLINK_DELAY;
 
-  // Wait in darkness
+    // Wait in darkness
   } else if (state == IDLE_WAIT_OFF) {
     //Serial.print(".");
     trellis.clear(); // just to clean up
@@ -220,7 +229,7 @@ unsigned int tickIdleShow() {
   }
 }
 
-unsigned int tickReadKeys() {
+unsigned long tickReadKeys() {
   // Read trellis keys
   if (trellis.readSwitches()) {
     for (byte i = 0; i < NUMKEYS; i++) {
@@ -238,7 +247,19 @@ unsigned int tickReadKeys() {
       changeVolume(encoderChange);
     }
   }
-  
+
+  // Read headset level
+  int audioLevel = analogRead(HEADSET_LEVEL_PIN);
+  if (headset != headsetFirstMeasure && (audioLevel > HEADSET_THRESHOLD) != headsetFirstMeasure) {
+    // confirmed change
+    onHeadsetInserted(audioLevel < HEADSET_THRESHOLD);
+    Serial.print("Confirmed change, headset "); Serial.println(headsetFirstMeasure);
+  } else if ((audioLevel < HEADSET_THRESHOLD) != headsetFirstMeasure) {
+    // there seems to be a change
+    headsetFirstMeasure = (audioLevel < HEADSET_THRESHOLD);
+    Serial.print("Possible change, headset "); Serial.println(headsetFirstMeasure);
+  }
+
   return READ_DELAY;
 }
 
@@ -248,11 +269,11 @@ void onKey(byte index) {
     stopPlaying();
     onTryNextTrack();
 
-  // Some (other) key pressed
+    // Some (other) key pressed
   } else {
     if (state == PLAY_SELECTED) stopPlaying();
     enablePlayer(true);
-    enableAmplifier(true);
+    enableAmplifier(!headset);
     onStartFirstTrack(index);
   }
 }
@@ -291,10 +312,15 @@ void onStopPlaying() {
   nextLED = 0;
 }
 
+void onHeadsetInserted(boolean plugged) {
+  headset = plugged;
+  enableAmplifier(!headset);
+}
+
 // Set volume for left, right channels. lower numbers == louder volume!
 //   0: max volume
 //  20: cracks on amplified loudspeaker
-// 130: audible 
+// 130: audible
 // 254: min volume
 // 255: analog off
 void changeVolume(int encoderChange) {
@@ -345,6 +371,6 @@ void enablePlayer(boolean enable) {
 }
 
 void enableAmplifier(boolean enable) {
-  digitalWrite(AMPLIFIER_ENABLE, enable);
+  digitalWrite(AMPLIFIER_ENABLE_PIN, enable);
 }
 
