@@ -23,13 +23,22 @@
 #include <Adafruit_Trellis.h>
 #include <ClickEncoder.h>
 #include <TimerOne.h>
+#include <LowPower.h>
 
 
 #define NUMKEYS 4
-#define IDLE_PAUSE  2000
-#define BLINK_DELAY  100
-#define READ_DELAY    50
+
+// Delays [ms]
+#define IDLE_PAUSE    2000
+#define BLINK_DELAY    100
+#define READ_DELAY      50
+#define IDLE_TIMEOUT (1000L * 20L)
 #define ROLLOVER_GAP (1000L * 60L * 60L)
+
+// Trellis LED brightness 1..15
+#define BRIGHTNESS_SLEEPTICK  0
+#define BRIGHTNESS_IDLE      10
+#define BRIGHTNESS_PLAYING   10
 
 // Trellis pin setup
 #define INT_PIN 1
@@ -52,10 +61,11 @@
 #define ENCODER_SWITCH      A2
 
 // States
-#define IDLE_LIGHT_UP 1
-#define IDLE_TURN_OFF 2
-#define IDLE_WAIT_OFF 3
-#define PLAY_SELECTED 4
+#define IDLE_LIGHT_UP   1
+#define IDLE_TURN_OFF   2
+#define IDLE_WAIT_OFF   3
+#define PLAY_SELECTED   4
+#define TIMEOUT_WAIT    5 
 
 // Volume
 #define VOLUME_MIN       130    // max. 254 moderation
@@ -74,6 +84,7 @@ ClickEncoder encoder = ClickEncoder(ENCODER_A, ENCODER_B, ENCODER_SWITCH, 2, LOW
 
 unsigned long nextReadTick = millis();
 unsigned long nextIdleTick = millis();
+unsigned long enterIdle = millis();
 byte state = IDLE_LIGHT_UP;
 byte nextLED = 0;
 byte playingAlbum;
@@ -182,14 +193,17 @@ void loop() {
     Serial.println("Rollover timer ticks!");
     nextReadTick = now;
     nextIdleTick = now;
+    enterIdle    = now;
   }
 
   // Next ticks
   if (nextReadTick <= now) {
-    nextReadTick += tickReadKeys();
+    nextReadTick += tickReadKeys(now);
+    nextReadTick = max(nextReadTick, now);
   }
   if (nextIdleTick <= now) {
-    nextIdleTick += tickIdleShow();
+    nextIdleTick += tickIdleShow(now);
+    nextIdleTick = max(nextIdleTick, now);
   }
 
   // Check for finished track
@@ -198,9 +212,10 @@ void loop() {
   }
 }
 
-unsigned long tickIdleShow() {
+unsigned long tickIdleShow(unsigned long now) {
   // Light up all keys in order
   if (state == IDLE_LIGHT_UP) {
+    trellis.setBrightness(BRIGHTNESS_IDLE);
     trellis.setLED(nextLED);
     trellis.writeDisplay();
     nextLED = (nextLED + 1) % NUMKEYS;
@@ -209,31 +224,49 @@ unsigned long tickIdleShow() {
     }
     return BLINK_DELAY;
 
-    // Turn off all keys in order
+  // Turn off all keys in order
   } else if (state == IDLE_TURN_OFF) {
     trellis.clrLED(nextLED);
     trellis.writeDisplay();
     nextLED = (nextLED + 1) % NUMKEYS;
     if (nextLED == 0) {
-      state = IDLE_WAIT_OFF;
+      if ((enterIdle + IDLE_TIMEOUT) <= now) {
+        onTimeout();
+      } else {
+        state = IDLE_WAIT_OFF;
+      }
       return IDLE_PAUSE;
     }
     return BLINK_DELAY;
 
-    // Wait in darkness
+  // Wait in darkness
   } else if (state == IDLE_WAIT_OFF) {
-    //Serial.print(".");
     trellis.clear(); // just to clean up
     state = IDLE_LIGHT_UP;
     return BLINK_DELAY;
+
+  // Power down after timeout, periodic wakeup (watchdog timer)
+  } else if (state == TIMEOUT_WAIT) {
+    trellis.sleep();
+    LowPower.powerDown(SLEEP_8S, ADC_OFF, BOD_OFF); 
+    trellis.wakeup();
+    trellis.setBrightness(BRIGHTNESS_SLEEPTICK);
+    trellis.setLED(nextLED);
+    trellis.writeDisplay();
+    LowPower.powerDown(SLEEP_15MS, ADC_OFF, BOD_OFF); 
+    trellis.clrLED(nextLED);
+    trellis.writeDisplay();
+    nextLED = (nextLED + 1) % NUMKEYS;
+    return IDLE_WAIT_OFF;
   }
 }
 
-unsigned long tickReadKeys() {
+unsigned long tickReadKeys(unsigned long now) {
   // Read trellis keys
   if (trellis.readSwitches()) {
     for (byte i = 0; i < NUMKEYS; i++) {
       if (trellis.justPressed(i)) {
+        if (state == TIMEOUT_WAIT) onSleepWake();
         onKey(i);
         break;
       }
@@ -263,13 +296,24 @@ unsigned long tickReadKeys() {
   return READ_DELAY;
 }
 
+void onTimeout() {
+  Serial.println("Timeout!");
+  player.setVolume(255, 255);
+  state = TIMEOUT_WAIT;
+}
+
+void onSleepWake() {
+  Serial.println("Wake-up!");
+  player.softReset();
+}
+
 void onKey(byte index) {
   // Same key pressed again
   if (state == PLAY_SELECTED && playingAlbum == index) {
     stopPlaying();
     onTryNextTrack();
 
-    // Some (other) key pressed
+  // Some (other) key pressed
   } else {
     if (state == PLAY_SELECTED) stopPlaying();
     enablePlayer(true);
@@ -308,6 +352,7 @@ void onStopPlaying() {
   enableAmplifier(false);
   enablePlayer(false);
   initializeTrellis(1200);
+  enterIdle = millis();
   state = IDLE_LIGHT_UP;
   nextLED = 0;
 }
@@ -332,6 +377,7 @@ void changeVolume(int encoderChange) {
 
 void blinkSelected(byte index) {
   trellis.clear();
+  trellis.setBrightness(BRIGHTNESS_PLAYING);
   trellis.setLED(index);
   trellis.blinkRate(HT16K33_BLINK_1HZ);
   trellis.writeDisplay();
