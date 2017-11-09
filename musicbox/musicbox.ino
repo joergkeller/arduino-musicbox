@@ -54,10 +54,12 @@
 #define HEADSET_LEVEL_PIN      A3   // Voltage level indicates headset plugin
 #define HEADSET_THRESHOLD     100   // Plugged-in: ~20, Unplugged: ~890
 
-// Rotary Encoder with Switch
+// Rotary Encoder with Switch and LED
 #define ENCODER_A           A0
 #define ENCODER_B           A1
 #define ENCODER_SWITCH      A2
+#define GREEN_LED_PIN       A4
+#define BLUE_LED_PIN        A5
 
 // States
 #define IDLE_LIGHT_UP   1
@@ -107,8 +109,16 @@ void setup() {
   initializePlayer();
   initializeTrellis();
   initializeTimer();
+  initializeSwitchLed();                    
 
   onEnterIdle(0);
+}
+
+void initializeSwitchLed() {
+  pinMode(GREEN_LED_PIN, OUTPUT);
+  pinMode(BLUE_LED_PIN, OUTPUT);
+  digitalWrite(GREEN_LED_PIN, HIGH);
+  digitalWrite(BLUE_LED_PIN, HIGH);
 }
 
 void initializeAmplifier() {
@@ -274,20 +284,14 @@ void onTimeout() {
   trellis.clear();
   trellis.writeDisplay();
   trellis.sleep();
-  //player.setVolume(255, 255);
   
   state = TIMEOUT_WAIT;
 }
 
 void onWatchdogPing() {
-  trellis.wakeup();
-  trellis.setBrightness(BRIGHTNESS_SLEEPTICK);
-  trellis.setLED(nextLED);
-  trellis.writeDisplay();
-  LowPower.powerDown(SLEEP_15MS, ADC_OFF, BOD_OFF); 
-  trellis.clrLED(nextLED);
-  trellis.writeDisplay();
-  nextLED = (nextLED + 1) % NUMKEYS;
+  digitalWrite(BLUE_LED_PIN, LOW); // LED on
+  delay(1);
+  digitalWrite(BLUE_LED_PIN, HIGH); // LED off
 }
 
 void trellisIsr() {
@@ -296,7 +300,6 @@ void trellisIsr() {
 }
 
 void onSleepWake() {
-  //player.softReset();
   trellis.wakeup();
   waitForNoKeyPressed();
   onEnterIdle(0);
