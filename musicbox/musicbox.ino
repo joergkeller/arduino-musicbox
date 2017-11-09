@@ -43,7 +43,7 @@
 #define INT_PIN 1
 
 // Feather/Wing pin setup
-#define MUSIC_RESET_PIN   -1     // VS1053 reset pin (not used!)
+#define MUSIC_RESET_PIN   12     // VS1053 reset pin (not used!)
 #define CARD_CS_PIN        5     // Card chip select pin
 #define MUSIC_CS_PIN       6     // VS1053 chip select pin (output)
 #define MUSIC_DCS_PIN     10     // VS1053 Data/command select pin (output)
@@ -70,7 +70,7 @@
 #define VOLUME_MIN       130    // max. 254 moderation
 #define VOLUME_MAX         0    // min. 0 moderation
 #define VOLUME_DIRECTION  +1
-#define VOLUME_OFF       254    // 255 = switch audio off, TODO avoiding cracking noise, maybe correct stuffing needed when stop
+#define VOLUME_OFF       255    // 255 = switch audio off, TODO avoiding cracking noise, maybe correct stuffing needed when stop
 
 /***************************************************
    Variables
@@ -139,6 +139,7 @@ void initializeCard() {
 }
 
 void initializePlayer() {
+  pinMode(MUSIC_RESET_PIN, OUTPUT);
   if (!player.begin()) {
     Serial.println(F("Couldn't find VS1053"));
     while (1);
@@ -453,8 +454,14 @@ void stopPlaying() {
 }
 
 void enablePlayer(boolean enable) {
-  int vol = enable ? volume : VOLUME_OFF;
-  player.setVolume(vol, vol);
+  if (enable) {
+    digitalWrite(MUSIC_RESET_PIN, HIGH);
+    player.reset();
+    player.setVolume(volume, volume);
+  } else {
+    player.setVolume(VOLUME_OFF, VOLUME_OFF);
+    digitalWrite(MUSIC_RESET_PIN, LOW);
+  }
 }
 
 void enableAmplifier(boolean enable) {
