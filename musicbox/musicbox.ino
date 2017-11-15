@@ -28,12 +28,13 @@
 
 
 // Delays [ms]
-#define IDLE_PAUSE    2000
-#define BLINK_DELAY    100
-#define PAUSE_DELAY   1000
-#define READ_DELAY      50
-#define IDLE_TIMEOUT (1000L * 60L)
-#define ROLLOVER_GAP (1000L * 60L * 60L)
+#define IDLE_PAUSE     2000
+#define BLINK_DELAY     100
+#define PAUSE_DELAY    1000
+#define READ_DELAY       50
+#define IDLE_TIMEOUT  (1000L * 60L)
+#define PAUSE_TIMEOUT (1000L * 60L *  5L)
+#define ROLLOVER_GAP  (1000L * 60L * 60L)
 
 // Trellis LED brightness 1..15
 #define BRIGHTNESS_SLEEPTICK  0
@@ -353,10 +354,19 @@ unsigned long tickReadKeys() {
   // Read encoder switch
   ClickEncoder::Button button = encoder.getButton();
   if (button == ClickEncoder::Clicked) {
-    if (state == PLAY_SELECTED) {
-      onPause (true);
-    } else if (state == PLAY_PAUSED) {
-      onPause (false);
+    switch (state) {
+      case PLAY_SELECTED: onPause(true); break;
+      case PLAY_PAUSED:   onPause(false); break;
+    }
+  } else if (button == ClickEncoder::Held) {
+    switch (state) {
+      case PLAY_SELECTED:
+      case PLAY_PAUSED:
+        Serial.print("Stopped #"); Serial.println(playingAlbum);
+        blinkLED(BLUE_LED_PIN);
+        stopPlaying();
+        onStopPlaying();
+      break;
     }
   }
 
@@ -376,8 +386,6 @@ unsigned long tickReadKeys() {
 }
 
 void onKey(byte index) {
-  nextTimeoutTick = 0;
-
   // No keys when paused
   if (state == PLAY_PAUSED) {
     // nop
@@ -385,12 +393,14 @@ void onKey(byte index) {
 
   // Same key pressed again
   } else if (state == PLAY_SELECTED && playingAlbum == index) {
+    nextTimeoutTick = 0; // no timeout during playing
     stopPlaying();
     onTryNextTrack();
 
   // Some (other) key pressed
   } else {
     if (state == PLAY_SELECTED) stopPlaying();
+    nextTimeoutTick = 0; // no timeout during playing
     enablePlayer(true);
     enableAmplifier(!headset);
     onStartFirstTrack(index);
@@ -405,7 +415,6 @@ void onStartFirstTrack(byte index) {
     Serial.print("Playing album #"); Serial.println(playingAlbum);
     state = PLAY_SELECTED;
   } else {
-    if (album && album.isDirectory()) album.close();
     Serial.print("Failed album #"); Serial.println(playingAlbum);
     onStopPlaying();
   }
@@ -417,7 +426,6 @@ void onTryNextTrack() {
     blinkSelected(playingAlbum);
     state = PLAY_SELECTED;
   } else {
-    if (album && album.isDirectory()) album.close();
     Serial.print("Ended album #"); Serial.println(playingAlbum);
     onStopPlaying();
   }
@@ -429,12 +437,14 @@ void onPause(bool pause) {
     trellis.blinkRate(HT16K33_BLINK_HALFHZ);
     player.pausePlaying(true);
     enableAmplifier(false);
+    nextTimeoutTick = millis() + PAUSE_TIMEOUT;
     state = PLAY_PAUSED;
   } else {
     Serial.println("Resume");
     trellis.blinkRate(HT16K33_BLINK_1HZ);
     enableAmplifier(!headset);
     player.pausePlaying(false);
+    nextTimeoutTick = 0; // no timeout during playing
     state = PLAY_SELECTED;
   }
 }
@@ -442,6 +452,7 @@ void onPause(bool pause) {
 void onStopPlaying() {
   enableAmplifier(false);
   enablePlayer(false);
+  if (album && album.isDirectory()) album.close();
   onEnterIdle(1200);
 }
 
