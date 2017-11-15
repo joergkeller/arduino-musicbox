@@ -6,6 +6,7 @@
      on key press play a music file from the micro SD card from a specific folder and blink the respective key (/)
      on pressing the same key or when playback stops jump to the next file in the folder, until all music is played (/)
      read the rotary decoder to change the volume, the maximum volume can be configured (/)
+     press the rotary decoder to pause/resume (/)
      detect when a headphone is plugged in and mute the amplifier for the internal speakers (/)
      switch the music box off automatically after an idle period
 
@@ -29,6 +30,7 @@
 // Delays [ms]
 #define IDLE_PAUSE    2000
 #define BLINK_DELAY    100
+#define PAUSE_DELAY   1000
 #define READ_DELAY      50
 #define IDLE_TIMEOUT (1000L * 60L)
 #define ROLLOVER_GAP (1000L * 60L * 60L)
@@ -39,8 +41,8 @@
 #define BRIGHTNESS_PLAYING   10
 
 // Trellis setup
-#define NUMKEYS 4
-#define INT_PIN 1
+#define NUMKEYS            4
+#define INT_PIN            1
 
 // Feather/Wing pin setup
 #define MUSIC_RESET_PIN   12     // VS1053 reset pin (not used!)
@@ -57,7 +59,7 @@
 // Rotary Encoder with Switch and LED
 #define ENCODER_A           A0
 #define ENCODER_B           A1
-#define ENCODER_SWITCH      A2
+#define ENCODER_SWITCH_PIN  A2
 #define GREEN_LED_PIN       A4
 #define BLUE_LED_PIN        A5
 
@@ -66,7 +68,8 @@
 #define IDLE_TURN_OFF   2
 #define IDLE_WAIT_OFF   3
 #define PLAY_SELECTED   4
-#define TIMEOUT_WAIT    5 
+#define PLAY_PAUSED     5
+#define TIMEOUT_WAIT    6 
 
 // Volume
 #define VOLUME_MIN       130    // max. 254 moderation
@@ -80,7 +83,7 @@
 
 Adafruit_Trellis trellis = Adafruit_Trellis();
 Adafruit_VS1053_FilePlayer player = Adafruit_VS1053_FilePlayer(MUSIC_RESET_PIN, MUSIC_CS_PIN, MUSIC_DCS_PIN, MUSIC_DREQ_PIN, CARD_CS_PIN);
-ClickEncoder encoder = ClickEncoder(ENCODER_A, ENCODER_B, ENCODER_SWITCH, 2, LOW);
+ClickEncoder encoder = ClickEncoder(ENCODER_A, ENCODER_B, ENCODER_SWITCH_PIN, 2, LOW, HIGH);
 
 
 unsigned long nextReadTick = millis() + 1;
@@ -262,6 +265,11 @@ unsigned long tickIdleShow() {
     trellis.writeDisplay();
     state = IDLE_LIGHT_UP;
     return BLINK_DELAY;
+
+  // Blink in pause mode
+  } else if (state == PLAY_PAUSED) {
+    blinkLED(BLUE_LED_PIN);
+    return PAUSE_DELAY;
   }
 }
 
@@ -289,9 +297,13 @@ void onTimeout() {
 }
 
 void onWatchdogPing() {
-  digitalWrite(BLUE_LED_PIN, LOW); // LED on
+  blinkLED(BLUE_LED_PIN);
+}
+
+void blinkLED(int pin) {
+  digitalWrite(pin, LOW); // LED on
   delay(1);
-  digitalWrite(BLUE_LED_PIN, HIGH); // LED off
+  digitalWrite(pin, HIGH); // LED off
 }
 
 void trellisIsr() {
@@ -338,6 +350,16 @@ unsigned long tickReadKeys() {
     }
   }
 
+  // Read encoder switch
+  ClickEncoder::Button button = encoder.getButton();
+  if (button == ClickEncoder::Clicked) {
+    if (state == PLAY_SELECTED) {
+      onPause (true);
+    } else if (state == PLAY_PAUSED) {
+      onPause (false);
+    }
+  }
+
   // Read headset level
   int audioLevel = analogRead(HEADSET_LEVEL_PIN);
   if (headset != headsetFirstMeasure && (audioLevel > HEADSET_THRESHOLD) != headsetFirstMeasure) {
@@ -356,8 +378,13 @@ unsigned long tickReadKeys() {
 void onKey(byte index) {
   nextTimeoutTick = 0;
 
+  // No keys when paused
+  if (state == PLAY_PAUSED) {
+    // nop
+    Serial.println("Still paused");
+
   // Same key pressed again
-  if (state == PLAY_SELECTED && playingAlbum == index) {
+  } else if (state == PLAY_SELECTED && playingAlbum == index) {
     stopPlaying();
     onTryNextTrack();
 
@@ -393,6 +420,22 @@ void onTryNextTrack() {
     if (album && album.isDirectory()) album.close();
     Serial.print("Ended album #"); Serial.println(playingAlbum);
     onStopPlaying();
+  }
+}
+
+void onPause(bool pause) {
+  if (pause) {
+    Serial.println("Pause");
+    trellis.blinkRate(HT16K33_BLINK_HALFHZ);
+    player.pausePlaying(true);
+    enableAmplifier(false);
+    state = PLAY_PAUSED;
+  } else {
+    Serial.println("Resume");
+    trellis.blinkRate(HT16K33_BLINK_1HZ);
+    enableAmplifier(!headset);
+    player.pausePlaying(false);
+    state = PLAY_SELECTED;
   }
 }
 
