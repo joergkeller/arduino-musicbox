@@ -6,7 +6,7 @@
      on key press play a music file from the micro SD card from a specific folder and blink the respective key (/)
      on pressing the same key or when playback stops jump to the next file in the folder, until all music is played (/)
      read the rotary decoder to change the volume, the maximum volume can be configured (/)
-     press the rotary decoder to pause/resume (/)
+     press the rotary decoder to pause/resume/stop/sleep (/)
      detect when a headphone is plugged in and mute the amplifier for the internal speakers (/)
      switch the music box off automatically after an idle period
 
@@ -43,7 +43,7 @@
 
 // Trellis setup
 #define NUMKEYS            4
-#define INT_PIN            1
+#define TRELLIS_INT_PIN    1
 
 // Feather/Wing pin setup
 #define MUSIC_RESET_PIN   12     // VS1053 reset pin (not used!)
@@ -54,13 +54,14 @@
 
 // Amplifier pin setup
 #define AMPLIFIER_ENABLE_PIN   11   // Enable both amplifier channels
-#define HEADSET_LEVEL_PIN      A3   // Voltage level indicates headset plugin
+#define HEADSET_LEVEL_PIN      A2   // Voltage level indicates headset plugin
 #define HEADSET_THRESHOLD     100   // Plugged-in: ~20, Unplugged: ~890
 
 // Rotary Encoder with Switch and LED
-#define ENCODER_A           A0
-#define ENCODER_B           A1
-#define ENCODER_SWITCH_PIN  A2
+#define ENCODER_A_PIN       A0
+#define ENCODER_B_PIN       A1
+#define ENCODER_SWITCH_PIN   0
+#define RED_LED_PIN         A3
 #define GREEN_LED_PIN       A4
 #define BLUE_LED_PIN        A5
 
@@ -84,7 +85,7 @@
 
 Adafruit_Trellis trellis = Adafruit_Trellis();
 Adafruit_VS1053_FilePlayer player = Adafruit_VS1053_FilePlayer(MUSIC_RESET_PIN, MUSIC_CS_PIN, MUSIC_DCS_PIN, MUSIC_DREQ_PIN, CARD_CS_PIN);
-ClickEncoder encoder = ClickEncoder(ENCODER_A, ENCODER_B, ENCODER_SWITCH_PIN, 2, LOW, HIGH);
+ClickEncoder encoder = ClickEncoder(ENCODER_A_PIN, ENCODER_B_PIN, ENCODER_SWITCH_PIN, 2, LOW, HIGH);
 
 
 unsigned long nextReadTick = millis() + 1;
@@ -119,10 +120,12 @@ void setup() {
 }
 
 void initializeSwitchLed() {
+  pinMode(RED_LED_PIN, OUTPUT);
   pinMode(GREEN_LED_PIN, OUTPUT);
   pinMode(BLUE_LED_PIN, OUTPUT);
-  digitalWrite(GREEN_LED_PIN, HIGH);
-  digitalWrite(BLUE_LED_PIN, HIGH);
+  digitalWrite(RED_LED_PIN, HIGH);   // LED off
+  digitalWrite(GREEN_LED_PIN, HIGH); // LED off
+  digitalWrite(BLUE_LED_PIN, HIGH);  // LED off
 }
 
 void initializeAmplifier() {
@@ -172,7 +175,7 @@ void initializePlayer() {
 void initializeTrellis() {
   // INT pin requires a pullup;
   // this is also the MIDI Tx pin recommended to bound to high
-  pinMode(INT_PIN, INPUT_PULLUP);
+  pinMode(TRELLIS_INT_PIN, INPUT_PULLUP);
 
   trellis.begin(0x70);
   //trellis.readSwitches(); // ignore already pressed switches
@@ -278,7 +281,7 @@ void tickIdleTimeout() {
   Serial.println("Timeout!");
   onTimeout();
 
-  attachInterrupt(digitalPinToInterrupt(INT_PIN), trellisIsr, LOW);
+  attachInterrupt(digitalPinToInterrupt(TRELLIS_INT_PIN), trellisIsr, LOW);
   LowPower.powerDown(SLEEP_8S, ADC_OFF, BOD_OFF); 
 
   if (state == TIMEOUT_WAIT) {
@@ -308,7 +311,7 @@ void blinkLED(int pin) {
 }
 
 void trellisIsr() {
-  detachInterrupt(digitalPinToInterrupt(INT_PIN));
+  detachInterrupt(digitalPinToInterrupt(TRELLIS_INT_PIN));
   state = IDLE_LIGHT_UP;
 }
 
