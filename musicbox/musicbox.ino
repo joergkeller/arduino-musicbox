@@ -355,13 +355,15 @@ unsigned long tickReadKeys() {
   }
 
   // Read encoder switch
+  static bool consumedHeld = false;
   ClickEncoder::Button button = encoder.getButton();
   if (button == ClickEncoder::Clicked) {
     switch (state) {
       case PLAY_SELECTED: onPause(true); break;
       case PLAY_PAUSED:   onPause(false); break;
     }
-  } else if (button == ClickEncoder::Held) {
+  } else if (button == ClickEncoder::Held && !consumedHeld) {
+    consumedHeld = true;
     switch (state) {
       case PLAY_SELECTED:
       case PLAY_PAUSED:
@@ -370,7 +372,19 @@ unsigned long tickReadKeys() {
         stopPlaying();
         onStopPlaying();
       break;
+
+      case IDLE_LIGHT_UP:
+      case IDLE_TURN_OFF:
+      case IDLE_WAIT_OFF:
+        Serial.println("Force timeout");
+        blinkLED(BLUE_LED_PIN);
+        delay(300);
+        blinkLED(BLUE_LED_PIN);
+        nextTimeoutTick = millis();
+      break;
     }
+  } else if (button == ClickEncoder::Released) {
+    consumedHeld = false;
   }
 
   // Read headset level
