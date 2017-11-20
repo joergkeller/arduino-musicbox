@@ -54,8 +54,8 @@
 
 // Amplifier pin setup
 #define AMPLIFIER_ENABLE_PIN   11   // Enable both amplifier channels
-#define HEADSET_LEVEL_PIN      A2   // Voltage level indicates headset plugin
-#define HEADSET_THRESHOLD     100   // Plugged-in: ~20, Unplugged: ~890
+#define HEADPHONE_LEVEL_PIN    A2   // Voltage level indicates headphone plugin
+#define HEADPHONE_THRESHOLD   100   // Plugged-in: ~20, Unplugged: ~890
 
 // Rotary Encoder with Switch and LED
 #define ENCODER_A_PIN       A0
@@ -74,10 +74,12 @@
 #define TIMEOUT_WAIT    6 
 
 // Volume
-#define VOLUME_MIN       130    // max. 254 moderation
-#define VOLUME_MAX         0    // min. 0 moderation
-#define VOLUME_DIRECTION  +1
-#define VOLUME_OFF       255    // 255 = switch audio off, TODO avoiding cracking noise, maybe correct stuffing needed when stop
+#define SPEAKER_VOLUME_MIN         130    // max. 254 moderation
+#define SPEAKER_VOLUME_MAX           5    // min. 0 moderation
+#define HEADPHONE_VOLUME_MIN       150    // max. 254 moderation
+#define HEADPHONE_VOLUME_MAX        60    // min. 0 moderation
+#define VOLUME_DIRECTION            +1
+#define VOLUME_OFF                 255    // 255 = switch audio off, TODO avoiding cracking noise, maybe correct stuffing needed when stop
 
 /***************************************************
    Variables
@@ -95,9 +97,9 @@ byte state = IDLE_LIGHT_UP;
 byte nextLED = 0;
 byte playingAlbum;
 File album;
-int volume = 64;
-boolean headset = false;
-boolean headsetFirstMeasure = false;
+int volume = 25;
+boolean headphone = false;
+boolean headphoneFirstMeasure = false;
 
 
 /***************************************************
@@ -130,7 +132,7 @@ void initializeSwitchLed() {
 
 void initializeAmplifier() {
   pinMode(AMPLIFIER_ENABLE_PIN, OUTPUT);
-  pinMode(HEADSET_LEVEL_PIN, INPUT_PULLUP);
+  pinMode(HEADPHONE_LEVEL_PIN, INPUT_PULLUP);
   enableAmplifier(false);
 }
 
@@ -387,16 +389,16 @@ unsigned long tickReadKeys() {
     consumedHeld = false;
   }
 
-  // Read headset level
-  int audioLevel = analogRead(HEADSET_LEVEL_PIN);
-  if (headset != headsetFirstMeasure && (audioLevel > HEADSET_THRESHOLD) != headsetFirstMeasure) {
+  // Read headphone level
+  int audioLevel = analogRead(HEADPHONE_LEVEL_PIN);
+  if (headphone != headphoneFirstMeasure && (audioLevel > HEADPHONE_THRESHOLD) != headphoneFirstMeasure) {
     // confirmed change
-    onHeadsetInserted(audioLevel < HEADSET_THRESHOLD);
-    Serial.print("Confirmed change, headset "); Serial.println(headsetFirstMeasure);
-  } else if ((audioLevel < HEADSET_THRESHOLD) != headsetFirstMeasure) {
+    onHeadphoneInserted(audioLevel < HEADPHONE_THRESHOLD);
+    Serial.print("Confirmed change, headphone "); Serial.println(headphoneFirstMeasure);
+  } else if ((audioLevel < HEADPHONE_THRESHOLD) != headphoneFirstMeasure) {
     // there seems to be a change
-    headsetFirstMeasure = (audioLevel < HEADSET_THRESHOLD);
-    Serial.print("Possible change, headset "); Serial.println(headsetFirstMeasure);
+    headphoneFirstMeasure = (audioLevel < HEADPHONE_THRESHOLD);
+    Serial.print("Possible change, headphone "); Serial.println(headphoneFirstMeasure);
   }
 
   return READ_DELAY;
@@ -419,7 +421,7 @@ void onKey(byte index) {
     if (state == PLAY_SELECTED) stopPlaying();
     nextTimeoutTick = 0; // no timeout during playing
     enablePlayer(true);
-    enableAmplifier(!headset);
+    enableAmplifier(!headphone);
     onStartFirstTrack(index);
   }
 }
@@ -459,7 +461,7 @@ void onPause(bool pause) {
   } else {
     Serial.println("Resume");
     trellis.blinkRate(HT16K33_BLINK_1HZ);
-    enableAmplifier(!headset);
+    enableAmplifier(!headphone);
     player.pausePlaying(false);
     nextTimeoutTick = 0; // no timeout during playing
     state = PLAY_SELECTED;
@@ -473,9 +475,14 @@ void onStopPlaying() {
   onEnterIdle(1200);
 }
 
-void onHeadsetInserted(boolean plugged) {
-  headset = plugged;
-  enableAmplifier(!headset);
+void onHeadphoneInserted(boolean plugged) {
+  headphone = plugged;
+  if (plugged) {
+    volume = volume + HEADPHONE_VOLUME_MAX - SPEAKER_VOLUME_MAX;
+  } else {
+    volume = volume + SPEAKER_VOLUME_MAX - HEADPHONE_VOLUME_MAX;
+  }
+  enableAmplifier(!headphone);
 }
 
 // Set volume for left, right channels. lower numbers == louder volume!
@@ -486,7 +493,11 @@ void onHeadsetInserted(boolean plugged) {
 // 255: analog off
 void changeVolume(int encoderChange) {
   volume += encoderChange;
-  volume = max(VOLUME_MAX, min(volume, VOLUME_MIN));
+  if (headphone) {
+    volume = max(HEADPHONE_VOLUME_MAX, min(volume, HEADPHONE_VOLUME_MIN));
+  } else {
+    volume = max(SPEAKER_VOLUME_MAX, min(volume, SPEAKER_VOLUME_MIN));
+  }
   Serial.print("Set Volume "); Serial.println(volume);
   player.setVolume(volume, volume);
 }
