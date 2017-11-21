@@ -28,8 +28,9 @@
 
 
 // Delays [ms]
-#define IDLE_PAUSE     2000
-#define BLINK_DELAY     100
+#define BLANK_DELAY    2500
+#define BLINK_DELAY      25
+#define HOLD_DELAY     1500
 #define PAUSE_DELAY    1000
 #define READ_DELAY       50
 #define IDLE_TIMEOUT  (1000L * 60L)
@@ -42,7 +43,7 @@
 #define BRIGHTNESS_PLAYING   10
 
 // Trellis setup
-#define NUMKEYS            4
+#define NUMKEYS           16
 #define TRELLIS_INT_PIN    1
 
 // Feather/Wing pin setup
@@ -67,11 +68,12 @@
 
 // States
 #define IDLE_LIGHT_UP   1
-#define IDLE_TURN_OFF   2
-#define IDLE_WAIT_OFF   3
-#define PLAY_SELECTED   4
-#define PLAY_PAUSED     5
-#define TIMEOUT_WAIT    6 
+#define IDLE_WAIT_ON    2
+#define IDLE_TURN_OFF   3
+#define IDLE_WAIT_OFF   4
+#define PLAY_SELECTED   5
+#define PLAY_PAUSED     6
+#define TIMEOUT_WAIT    7 
 
 // Volume
 #define SPEAKER_VOLUME_MIN         130    // max. 254 moderation
@@ -250,9 +252,14 @@ unsigned long tickIdleShow() {
     trellis.writeDisplay();
     nextLED = (nextLED + 1) % NUMKEYS;
     if (nextLED == 0) {
-      state = IDLE_TURN_OFF;
+      state = IDLE_WAIT_ON;
     }
     return BLINK_DELAY;
+
+  // Wait with all keys lighted
+  } else if (state == IDLE_WAIT_ON) {
+    state = IDLE_TURN_OFF;
+    return HOLD_DELAY;
 
   // Turn off all keys in order
   } else if (state == IDLE_TURN_OFF) {
@@ -261,7 +268,7 @@ unsigned long tickIdleShow() {
     nextLED = (nextLED + 1) % NUMKEYS;
     if (nextLED == 0) {
       state = IDLE_WAIT_OFF;
-      return IDLE_PAUSE;
+      return BLANK_DELAY;
     }
     return BLINK_DELAY;
 
