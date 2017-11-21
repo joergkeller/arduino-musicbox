@@ -29,7 +29,7 @@
 
 // Delays [ms]
 #define BLANK_DELAY    2500
-#define BLINK_DELAY      25
+#define BLINK_DELAY      20
 #define HOLD_DELAY     1500
 #define PAUSE_DELAY    1000
 #define READ_DELAY       50
@@ -112,7 +112,7 @@ void setup() {
 
   Serial.begin(14400);
   while (!Serial && millis() < nextIdleTick + 2000);
-  Serial.println("MusicBox setup");
+  Serial.println(F("MusicBox setup"));
 
   initializeCard();
   initializePlayer();
@@ -143,17 +143,17 @@ void initializeCard() {
     Serial.println(F("SD failed, or not present"));
     while (1);  // don't do anything more
   }
-  Serial.println("SD initialized");
+  Serial.println(F("SD initialized"));
 
-  File root = SD.open("/");
+  File root = SD.open(F("/"));
   while (true) {
     File entry = root.openNextFile();
     if (!entry) break;
     Serial.print(entry.name());
     if (entry.isDirectory()) {
-      Serial.println("/");
+      Serial.println(F("/"));
     } else {
-      Serial.print("\t\t");
+      Serial.print(F("\t\t"));
       Serial.println(entry.size(), DEC);
     }
   }
@@ -183,13 +183,13 @@ void initializeTrellis() {
 
   trellis.begin(0x70);
   //trellis.readSwitches(); // ignore already pressed switches
-  Serial.println("Trellis initialized");
+  Serial.println(F("Trellis initialized"));
 }
 
 void initializeTimer() {
   Timer1.initialize(1000);
   Timer1.attachInterrupt(timerIsr);
-  Serial.println("Timer initialized");
+  Serial.println(F("Timer initialized"));
 }
 
 void onEnterIdle(unsigned int delay) {
@@ -222,7 +222,7 @@ void loop() {
 
   // Rollover millis since start
   if (nextReadTick > now + ROLLOVER_GAP) {
-    Serial.println("Rollover timer ticks!");
+    Serial.println(F("Rollover timer ticks!"));
     nextReadTick = now + 1;
     nextIdleTick = now + 1;
     nextTimeoutTick = nextTimeoutTick == 0 ? 0 : now + IDLE_TIMEOUT;
@@ -287,7 +287,7 @@ unsigned long tickIdleShow() {
 }
 
 void tickIdleTimeout() {
-  Serial.println("Timeout!");
+  Serial.println(F("Timeout!"));
   onTimeout();
 
   attachInterrupt(digitalPinToInterrupt(TRELLIS_INT_PIN), trellisIsr, LOW);
@@ -376,7 +376,7 @@ unsigned long tickReadKeys() {
     switch (state) {
       case PLAY_SELECTED:
       case PLAY_PAUSED:
-        Serial.print("Stopped #"); Serial.println(playingAlbum);
+        Serial.print(F("Stopped #")); Serial.println(playingAlbum);
         blinkLED(BLUE_LED_PIN);
         stopPlaying();
         onStopPlaying();
@@ -385,7 +385,7 @@ unsigned long tickReadKeys() {
       case IDLE_LIGHT_UP:
       case IDLE_TURN_OFF:
       case IDLE_WAIT_OFF:
-        Serial.println("Force timeout");
+        Serial.println(F("Force timeout"));
         blinkLED(BLUE_LED_PIN);
         delay(300);
         blinkLED(BLUE_LED_PIN);
@@ -401,11 +401,11 @@ unsigned long tickReadKeys() {
   if (headphone != headphoneFirstMeasure && (audioLevel > HEADPHONE_THRESHOLD) != headphoneFirstMeasure) {
     // confirmed change
     onHeadphoneInserted(audioLevel < HEADPHONE_THRESHOLD);
-    Serial.print("Confirmed change, headphone "); Serial.println(headphoneFirstMeasure);
+    Serial.print(F("Confirmed change, headphone ")); Serial.println(headphoneFirstMeasure);
   } else if ((audioLevel < HEADPHONE_THRESHOLD) != headphoneFirstMeasure) {
     // there seems to be a change
     headphoneFirstMeasure = (audioLevel < HEADPHONE_THRESHOLD);
-    Serial.print("Possible change, headphone "); Serial.println(headphoneFirstMeasure);
+    Serial.print(F("Possible change, headphone ")); Serial.println(headphoneFirstMeasure);
   }
 
   return READ_DELAY;
@@ -415,7 +415,7 @@ void onKey(byte index) {
   // No keys when paused
   if (state == PLAY_PAUSED) {
     // nop
-    Serial.println("Still paused");
+    Serial.println(F("Still paused"));
 
   // Same key pressed again
   } else if (state == PLAY_SELECTED && playingAlbum == index) {
@@ -438,35 +438,35 @@ void onStartFirstTrack(byte index) {
   blinkSelected(playingAlbum);
   openNewAlbum(playingAlbum);
   if (playNextTrack()) {
-    Serial.print("Playing album #"); Serial.println(playingAlbum);
+    Serial.print(F("Playing album #")); Serial.println(playingAlbum);
     state = PLAY_SELECTED;
   } else {
-    Serial.print("Failed album #"); Serial.println(playingAlbum);
+    Serial.print(F("Failed album #")); Serial.println(playingAlbum);
     onStopPlaying();
   }
 }
 
 void onTryNextTrack() {
   if (playNextTrack()) {
-    Serial.print("Playing next track album #"); Serial.println(playingAlbum);
+    Serial.print(F("Playing next track album #")); Serial.println(playingAlbum);
     blinkSelected(playingAlbum);
     state = PLAY_SELECTED;
   } else {
-    Serial.print("Ended album #"); Serial.println(playingAlbum);
+    Serial.print(F("Ended album #")); Serial.println(playingAlbum);
     onStopPlaying();
   }
 }
 
 void onPause(bool pause) {
   if (pause) {
-    Serial.println("Pause");
+    Serial.println(F("Pause"));
     trellis.blinkRate(HT16K33_BLINK_HALFHZ);
     player.pausePlaying(true);
     enableAmplifier(false);
     nextTimeoutTick = millis() + PAUSE_TIMEOUT;
     state = PLAY_PAUSED;
   } else {
-    Serial.println("Resume");
+    Serial.println(F("Resume"));
     trellis.blinkRate(HT16K33_BLINK_1HZ);
     enableAmplifier(!headphone);
     player.pausePlaying(false);
@@ -505,7 +505,7 @@ void changeVolume(int encoderChange) {
   } else {
     volume = max(SPEAKER_VOLUME_MAX, min(volume, SPEAKER_VOLUME_MIN));
   }
-  Serial.print("Set Volume "); Serial.println(volume);
+  Serial.print(F("Set Volume ")); Serial.println(volume);
   player.setVolume(volume, volume);
 }
 
@@ -519,7 +519,7 @@ void blinkSelected(byte index) {
 
 boolean openNewAlbum(byte index) {
   int albumNr = index + 1;
-  String albumTemplate = "ALBUM";
+  String albumTemplate = F("ALBUM");
   String albumName = albumTemplate + albumNr;
   if (album && album.isDirectory()) album.close();
   album = SD.open(albumName);
@@ -533,7 +533,7 @@ boolean playNextTrack() {
   String albumName = album.name();
   String dirPath = albumName + '/';
   String filePath = dirPath + track.name();
-  Serial.print("Next track: "); Serial.println(filePath);
+  Serial.print(F("Next track: ")); Serial.println(filePath);
   track.close();
 
   player.startPlayingFile(filePath.c_str());
