@@ -77,7 +77,7 @@
 
 // Volume
 #define SPEAKER_VOLUME_MIN         130    // max. 254 moderation
-#define SPEAKER_VOLUME_MAX           5    // min. 0 moderation
+#define SPEAKER_VOLUME_MAX          15    // min. 0 moderation
 #define HEADPHONE_VOLUME_MIN       150    // max. 254 moderation
 #define HEADPHONE_VOLUME_MAX        60    // min. 0 moderation
 #define VOLUME_DIRECTION            +1
@@ -99,7 +99,7 @@ byte state = IDLE_LIGHT_UP;
 byte nextLED = 0;
 byte playingAlbum;
 File album;
-int volume = 25;
+int volume = 35;
 boolean headphone = false;
 boolean headphoneFirstMeasure = false;
 
@@ -156,7 +156,9 @@ void initializeCard() {
       Serial.print(F("\t\t"));
       Serial.println(entry.size(), DEC);
     }
+    entry.close();
   }
+  root.close();
 }
 
 void initializePlayer() {
