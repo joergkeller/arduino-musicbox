@@ -33,7 +33,7 @@
 #define HOLD_DELAY     1500
 #define PAUSE_DELAY    1000
 #define READ_DELAY       50
-#define IDLE_TIMEOUT  (1000L * 60L)
+#define IDLE_TIMEOUT  (1000L * 60L * 15L)
 #define PAUSE_TIMEOUT (1000L * 60L *  5L)
 #define ROLLOVER_GAP  (1000L * 60L * 60L)
 
@@ -77,10 +77,10 @@
 
 // Volume
 #define SPEAKER_VOLUME_MIN         130    // max. 254 moderation
-#define SPEAKER_VOLUME_MAX          15    // min. 0 moderation
+#define SPEAKER_VOLUME_MAX           5    // min. 0 moderation
 #define HEADPHONE_VOLUME_MIN       150    // max. 254 moderation
 #define HEADPHONE_VOLUME_MAX        60    // min. 0 moderation
-#define VOLUME_DIRECTION            +1
+#define VOLUME_DIRECTION            +1    // set direction of encoder-volume
 #define VOLUME_OFF                 255    // 255 = switch audio off, TODO avoiding cracking noise, maybe correct stuffing needed when stop
 
 /***************************************************
@@ -141,7 +141,7 @@ void initializeAmplifier() {
 void initializeCard() {
   if (!SD.begin(CARD_CS_PIN)) {
     Serial.println(F("SD failed, or not present"));
-    while (1);  // don't do anything more
+    return;  // don't do anything more
   }
   Serial.println(F("SD initialized"));
 
@@ -165,7 +165,7 @@ void initializePlayer() {
   pinMode(MUSIC_RESET_PIN, OUTPUT);
   if (!player.begin()) {
     Serial.println(F("Couldn't find VS1053"));
-    while (1);
+    return;
   }
   player.softReset();
   //player.sineTest(0x44, 500);    // Make a tone to indicate VS1053 is working
@@ -184,7 +184,7 @@ void initializeTrellis() {
   pinMode(TRELLIS_INT_PIN, INPUT_PULLUP);
 
   trellis.begin(0x70);
-  //trellis.readSwitches(); // ignore already pressed switches
+  trellis.readSwitches(); // ignore already pressed switches
   Serial.println(F("Trellis initialized"));
 }
 
@@ -379,7 +379,7 @@ unsigned long tickReadKeys() {
       case PLAY_SELECTED:
       case PLAY_PAUSED:
         Serial.print(F("Stopped #")); Serial.println(playingAlbum);
-        blinkLED(BLUE_LED_PIN);
+        blinkLED(RED_LED_PIN);
         stopPlaying();
         onStopPlaying();
       break;
@@ -388,9 +388,9 @@ unsigned long tickReadKeys() {
       case IDLE_TURN_OFF:
       case IDLE_WAIT_OFF:
         Serial.println(F("Force timeout"));
-        blinkLED(BLUE_LED_PIN);
+        blinkLED(GREEN_LED_PIN);
         delay(300);
-        blinkLED(BLUE_LED_PIN);
+        blinkLED(RED_LED_PIN);
         nextTimeoutTick = millis();
       break;
     }
