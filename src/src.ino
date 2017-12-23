@@ -8,7 +8,7 @@
      read the rotary decoder to change the volume, the maximum volume can be configured (/)
      press the rotary decoder to pause/resume/stop/sleep (/)
      detect when a headphone is plugged in and mute the amplifier for the internal speakers (/)
-     switch the music box off automatically after an idle period
+     switch the music box off automatically after an idle period (/)
 
   Todos:
    - Audio off when idle (volume 255,255) -> proper file padding needed (?)
@@ -25,6 +25,10 @@
 #include <ClickEncoder.h>
 #include <TimerOne.h>
 #include <LowPower.h>
+#include <PN532_I2C.h>
+#include <PN532.h>
+#include <NfcAdapter.h>
+#include <Properties.h>
 
 
 // Delays [ms]
@@ -33,6 +37,7 @@
 #define HOLD_DELAY     1500
 #define PAUSE_DELAY    1000
 #define READ_DELAY       50
+#define NFC_DELAY      1000
 #define IDLE_TIMEOUT  (1000L * 60L * 15L)
 #define PAUSE_TIMEOUT (1000L * 60L *  5L)
 #define ROLLOVER_GAP  (1000L * 60L * 60L)
@@ -90,9 +95,12 @@
 Adafruit_Trellis trellis = Adafruit_Trellis();
 Adafruit_VS1053_FilePlayer player = Adafruit_VS1053_FilePlayer(MUSIC_RESET_PIN, MUSIC_CS_PIN, MUSIC_DCS_PIN, MUSIC_DREQ_PIN, CARD_CS_PIN);
 ClickEncoder encoder = ClickEncoder(ENCODER_A_PIN, ENCODER_B_PIN, ENCODER_SWITCH_PIN, 2, LOW, HIGH);
+PN532_I2C pn532i2c(Wire);
+PN532 nfc(pn532i2c);
 
 
 unsigned long nextReadTick = millis() + 1;
+unsigned long nextNfcTick = millis() + 1;
 unsigned long nextIdleTick = millis() + 1;
 unsigned long nextTimeoutTick = 0;
 byte state = IDLE_LIGHT_UP;
@@ -114,11 +122,12 @@ void setup() {
   while (!Serial && millis() < nextIdleTick + 2000);
   Serial.println(F("MusicBox setup"));
 
-  initializeCard();
-  initializePlayer();
-  initializeTrellis();
-  initializeTimer();
   initializeSwitchLed();                    
+  initializeTrellis();
+  initializeNfc();
+  initializePlayer();
+  initializeCard();
+  initializeTimer();
 
   onEnterIdle(0);
 }
@@ -140,7 +149,7 @@ void initializeAmplifier() {
 
 void initializeCard() {
   if (!SD.begin(CARD_CS_PIN)) {
-    Serial.println(F("SD failed, or not present"));
+    Serial.println(F("SD failed or not inserted"));
     return;  // don't do anything more
   }
   Serial.println(F("SD initialized"));
@@ -164,7 +173,7 @@ void initializeCard() {
 void initializePlayer() {
   pinMode(MUSIC_RESET_PIN, OUTPUT);
   if (!player.begin()) {
-    Serial.println(F("Couldn't find VS1053"));
+    Serial.println(F("VS1053 failed"));
     return;
   }
   player.softReset();
@@ -188,6 +197,23 @@ void initializeTrellis() {
   Serial.println(F("Trellis initialized"));
 }
 
+void initializeNfc() {
+  nfc.begin();
+  uint32_t versiondata = nfc.getFirmwareVersion();
+  if (!versiondata) {
+    Serial.println(F("PN532 failed"));
+    return;
+  }
+  
+  // Set the max number of retry attempts to read from a card.
+  // This prevents us from waiting forever for a card, which is the default behaviour of the PN532.
+  nfc.setPassiveActivationRetries(1);
+  
+  // configure board to read RFID tags
+  nfc.SAMConfig();
+  Serial.println(F("PN532 initialized"));
+}
+
 void initializeTimer() {
   Timer1.initialize(1000);
   Timer1.attachInterrupt(timerIsr);
@@ -201,6 +227,7 @@ void onEnterIdle(unsigned int delay) {
   trellis.writeDisplay();
 
   nextReadTick = millis() + 1;
+  nextNfcTick = millis() + 1;
   nextIdleTick = millis() + 1 + delay;
   nextTimeoutTick = millis() + IDLE_TIMEOUT;
 
@@ -232,13 +259,16 @@ void loop() {
 
   // Next ticks
   if (0 < nextTimeoutTick && nextTimeoutTick <= now) {
-    tickIdleTimeout();
+    tickIdleTimeout(now);
   }
   if (0 < nextReadTick && nextReadTick <= now) {
-    nextReadTick = now + tickReadKeys();
+    tickReadKeys(now);
+  }
+  if (0 < nextNfcTick && nextNfcTick <= now) {
+    tickReadNfc(now);
   }
   if (0 < nextIdleTick && nextIdleTick <= now) {
-    nextIdleTick = now + tickIdleShow();
+    tickIdleShow(now);
   }
 
   // Check for finished track
@@ -247,7 +277,7 @@ void loop() {
   }
 }
 
-unsigned long tickIdleShow() {
+void tickIdleShow(unsigned long now) {
   // Light up all keys in order
   if (state == IDLE_LIGHT_UP) {
     trellis.setLED(nextLED);
@@ -256,12 +286,12 @@ unsigned long tickIdleShow() {
     if (nextLED == 0) {
       state = IDLE_WAIT_ON;
     }
-    return BLINK_DELAY;
+    nextIdleTick = now + BLINK_DELAY;
 
   // Wait with all keys lighted
   } else if (state == IDLE_WAIT_ON) {
     state = IDLE_TURN_OFF;
-    return HOLD_DELAY;
+    nextIdleTick = now + HOLD_DELAY;
 
   // Turn off all keys in order
   } else if (state == IDLE_TURN_OFF) {
@@ -270,25 +300,26 @@ unsigned long tickIdleShow() {
     nextLED = (nextLED + 1) % NUMKEYS;
     if (nextLED == 0) {
       state = IDLE_WAIT_OFF;
-      return BLANK_DELAY;
+      nextIdleTick = now + BLANK_DELAY;
+      return;
     }
-    return BLINK_DELAY;
+    nextIdleTick = now + BLINK_DELAY;
 
   // Wait in darkness
   } else if (state == IDLE_WAIT_OFF) {
     trellis.clear(); // just to clean up
     trellis.writeDisplay();
     state = IDLE_LIGHT_UP;
-    return BLINK_DELAY;
+    nextIdleTick = now + BLINK_DELAY;
 
   // Blink in pause mode
   } else if (state == PLAY_PAUSED) {
     blinkLED(BLUE_LED_PIN);
-    return PAUSE_DELAY;
+    nextIdleTick = now + PAUSE_DELAY;
   }
 }
 
-void tickIdleTimeout() {
+void tickIdleTimeout(unsigned long now) {
   Serial.println(F("Timeout!"));
   onTimeout();
 
@@ -345,7 +376,7 @@ void waitForNoKeyPressed() {
   }
 }
 
-unsigned long tickReadKeys() {
+void tickReadKeys(unsigned long now) {
   // Read trellis keys
   if (trellis.readSwitches()) {
     for (byte i = 0; i < NUMKEYS; i++) {
@@ -410,7 +441,28 @@ unsigned long tickReadKeys() {
     Serial.print(F("Possible change, headphone ")); Serial.println(headphoneFirstMeasure);
   }
 
-  return READ_DELAY;
+  nextReadTick = now + READ_DELAY;
+}
+
+unsigned long tickReadNfc(unsigned long now) {
+  // Wait for an ISO14443A type cards (Mifare, etc.).
+  // Length of uid is 4 bytes (Mifare Classic) or 7 bytes (Mifare Ultralight).
+  byte uid[] = { 0, 0, 0, 0, 0, 0, 0 };  // Buffer to store the returned UID
+  byte uidLength;                        // Length of the UID (4 or 7 bytes depending on ISO14443A card type)
+  if (nfc.readPassiveTargetID(PN532_MIFARE_ISO14443A, &uid[0], &uidLength)) {
+    String hexId = String("");
+    for (uint8_t i=0; i < uidLength; i++) {
+      hexId += String(uid[i], HEX);
+    }
+    hexId.toUpperCase();
+    Serial.print(F("NFC UID: 0x")); Serial.println(hexId);
+    onNfcId(hexId);
+
+    nextNfcTick = 0; // no nfc reading during playing
+  } else {
+    // No NFC card found, try again
+    nextNfcTick = now + NFC_DELAY;
+  }
 }
 
 void onKey(byte index) {
@@ -422,6 +474,7 @@ void onKey(byte index) {
   // Same key pressed again
   } else if (state == PLAY_SELECTED && playingAlbum == index) {
     nextTimeoutTick = 0; // no timeout during playing
+    nextNfcTick = 0; // no nfc reading during playing
     stopPlaying();
     onTryNextTrack();
 
@@ -429,9 +482,29 @@ void onKey(byte index) {
   } else {
     if (state == PLAY_SELECTED) stopPlaying();
     nextTimeoutTick = 0; // no timeout during playing
+    nextNfcTick = 0; // no nfc reading during playing
     enablePlayer(true);
-    enableAmplifier(!headphone);
     onStartFirstTrack(index);
+    enableAmplifier(!headphone);
+  }
+}
+
+void onNfcId(String hexId) {
+  if (state == PLAY_SELECTED || state == PLAY_PAUSED) {
+    ; // nop
+  } else {
+    File file = SD.open("nfc.cfg");
+    Properties cfg = Properties(file);
+    String trackName = cfg.readString(hexId);
+    Serial.print(F("Playing file ")); Serial.println(trackName);
+
+    state = PLAY_SELECTED;
+    playingAlbum = 0;
+    blinkSelected(playingAlbum);
+    nextTimeoutTick = 0; // no timeout during playing
+    enablePlayer(true);
+    player.startPlayingFile(trackName.c_str());
+    enableAmplifier(!headphone);
   }
 }
 
