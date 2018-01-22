@@ -1,0 +1,18 @@
+[submodule "libraries/Properties"]
+	path = libraries/Properties
+	url = https://github.com/joergkeller/Properties.git
+[submodule "libraries/Encoder"]
+	path = libraries/Encoder
+	url = https://github.com/joergkeller/encoder.git
+[submodule "libraries/Adafruit_Trellis"]
+	path = libraries/Adafruit_Trellis
+	url = https://github.com/joergkeller/Adafruit_Trellis_Library.git
+[submodule "libraries/Adafruit_VS1053"]
+	path = libraries/Adafruit_VS1053
+	url = https://github.com/joergkeller/Adafruit_VS1053_Library.git
+[submodule "libraries/Low-Power"]
+	path = libraries/Low-Power
+	url = https://github.com/rocketscream/Low-Power.git
+[submodule "libraries/TimerOne"]
+	path = libraries/TimerOne
+	url = https://github.com/devalfrz/TimerOne.git
