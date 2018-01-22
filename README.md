@@ -19,6 +19,14 @@ The control code shall
 * switch the music box  off automatically after an idle period
 
 
+## Checkout this code
+```
+git clone https://github.com/joergkeller/arduino-musicbox.git
+cd arduino-musicbox
+git submodule init
+git submodule update
+```
+
 ## Prepare micro SD card
 Copy \<musicbox\>/extras/config/*.cfg in root directory of the SD card.\
 Create/fill folders album1 .. album16 with your music files.\
