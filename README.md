@@ -20,30 +20,30 @@ The control code shall
 
 
 ## Prepare micro SD card
-Copy <musicbox>/extras/config/*.cfg in root directory of the SD card.
-Create/fill folders album1 .. album16 with your music files.
+Copy \<musicbox\>/extras/config/*.cfg in root directory of the SD card.\
+Create/fill folders album1 .. album16 with your music files.\
 Stories and songs for NFC-chips can be in separate folders, list NFC id in nfc.cfg.
 
 
 ## Howto install using Arduino IDE
 
-File > Preferences > Sketchbook locations:
-<musicbox> folder containing src, libraries, extra folders
+File > Preferences > Sketchbook locations:\
+\<musicbox\> folder containing src, libraries, extra folders
 
-File > Preferences > Additional Boards Manager URLs:
+File > Preferences > Additional Boards Manager URLs:\
 https://adafruit.github.io/arduino-board-index/package_adafruit_index.json
 
-Tools > Board > Boards Manager
-- Install Adafruit AVR Boards
+Tools > Board > Boards Manager\
+ Install Adafruit AVR Boards
 
-Restart Arduino IDE
-Open src.ino
+Restart Arduino IDE\
+Open \<musicbox\>/src/src.ino
 
-Tools > Boards
-- Adafruit Feather 32u4
+Tools > Boards\
+ Adafruit Feather 32u4
 
-Tools > Ports
-<USB port connected to the feather board>
+Tools > Ports\
+\<USB port connected to the feather board\>
 
-> Verify/Compile
+> Verify/Compile\
 > Upload
