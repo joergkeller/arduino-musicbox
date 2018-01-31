@@ -27,6 +27,10 @@ git submodule init
 git submodule update
 ```
 
+## Remarks on the hardware
+* Cut the "RESET" bridge on the Adafruit MusicMaker FeatherWing (otherwise a reset of the mp3 chip will also reset the arduino board).
+* Set dip switches on the NFC board to use I2C (1: ON, 2: OFF)
+
 ## Prepare micro SD card
 Copy \<musicbox\>/extras/config/*.cfg in root directory of the SD card.\
 Create/fill folders album1 .. album16 with your music files.\
