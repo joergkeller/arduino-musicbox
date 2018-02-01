@@ -39,7 +39,7 @@
 #define READ_DELAY       50
 #define NFC_DELAY      1000
 #define IDLE_TIMEOUT  (1000L * 60L * 15L)
-#define PAUSE_TIMEOUT (1000L * 60L *  5L)
+#define PAUSE_TIMEOUT (1000L * 60L * 60L)
 #define ROLLOVER_GAP  (1000L * 60L * 60L)
 
 // Trellis LED brightness 1..15
@@ -71,6 +71,9 @@
 #define GREEN_LED_PIN       A4
 #define BLUE_LED_PIN        A5
 
+// NFC pin setup
+#define NFC_RESET_PIN   13    // PN532 reset pin
+
 // States
 #define IDLE_LIGHT_UP   1
 #define IDLE_WAIT_ON    2
@@ -85,7 +88,7 @@
 #define SPEAKER_VOLUME_MAX           5    // min. 0 moderation
 #define HEADPHONE_VOLUME_MIN       150    // max. 254 moderation
 #define HEADPHONE_VOLUME_MAX        60    // min. 0 moderation
-#define VOLUME_DIRECTION            +1    // set direction of encoder-volume
+#define VOLUME_DIRECTION            -1    // set direction of encoder-volume
 #define VOLUME_OFF                 255    // 255 = switch audio off, TODO avoiding cracking noise, maybe correct stuffing needed when stop
 
 /***************************************************
@@ -172,6 +175,7 @@ void initializeCard() {
 
 void initializePlayer() {
   pinMode(MUSIC_RESET_PIN, OUTPUT);
+  digitalWrite(MUSIC_RESET_PIN, HIGH);
   if (!player.begin()) {
     Serial.println(F("VS1053 failed"));
     return;
@@ -198,6 +202,8 @@ void initializeTrellis() {
 }
 
 void initializeNfc() {
+  pinMode(MUSIC_RESET_PIN, OUTPUT);
+  digitalWrite(MUSIC_RESET_PIN, HIGH);
   nfc.begin();
   uint32_t versiondata = nfc.getFirmwareVersion();
   if (!versiondata) {
@@ -209,8 +215,6 @@ void initializeNfc() {
   // This prevents us from waiting forever for a card, which is the default behaviour of the PN532.
   nfc.setPassiveActivationRetries(1);
   
-  // configure board to read RFID tags
-  nfc.SAMConfig();
   Serial.println(F("PN532 initialized"));
 }
 
@@ -225,7 +229,8 @@ void onEnterIdle(unsigned int delay) {
   trellis.blinkRate(HT16K33_BLINK_OFF);
   trellis.clear();
   trellis.writeDisplay();
-
+  enableNfc(true);
+  
   nextReadTick = millis() + 1;
   nextNfcTick = millis() + 1;
   nextIdleTick = millis() + 1 + delay;
@@ -257,7 +262,7 @@ void loop() {
     nextTimeoutTick = nextTimeoutTick == 0 ? 0 : now + IDLE_TIMEOUT;
   }
 
-  // Next ticks
+  // Next ticks (timeout check first to go back to sleep mode after blink)
   if (0 < nextTimeoutTick && nextTimeoutTick <= now) {
     tickIdleTimeout(now);
   }
@@ -338,6 +343,9 @@ void onTimeout() {
   trellis.clear();
   trellis.writeDisplay();
   trellis.sleep();
+  enableNfc(false);
+  enablePlayer(false);
+  enableAmplifier(false);
   
   state = TIMEOUT_WAIT;
 }
@@ -458,6 +466,7 @@ unsigned long tickReadNfc(unsigned long now) {
     Serial.print(F("NFC UID: 0x")); Serial.println(hexId);
     onNfcId(hexId);
 
+    enableNfc(false);
     nextNfcTick = 0; // no nfc reading during playing
   } else {
     // No NFC card found, try again
@@ -634,4 +643,12 @@ void enablePlayer(boolean enable) {
 void enableAmplifier(boolean enable) {
   digitalWrite(AMPLIFIER_ENABLE_PIN, enable);
 }
+
+void enableNfc(boolean enable) {
+  digitalWrite(NFC_RESET_PIN, enable);
+  if (enable) {
+    nfc.SAMConfig();
+  }
+}
+
 
