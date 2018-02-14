@@ -52,7 +52,7 @@
 #define TRELLIS_INT_PIN    1
 
 // Feather/Wing pin setup
-#define MUSIC_RESET_PIN   12     // VS1053 reset pin (not used!)
+#define MUSIC_RESET_PIN   12     // VS1053 reset pin
 #define CARD_CS_PIN        5     // Card chip select pin
 #define MUSIC_CS_PIN       6     // VS1053 chip select pin (output)
 #define MUSIC_DCS_PIN     10     // VS1053 Data/command select pin (output)
@@ -120,6 +120,9 @@ boolean headphoneFirstMeasure = false;
  ****************************************************/
 void setup() {
   initializeAmplifier();
+  trellis.begin(0x70);
+  trellis.clear();
+  trellis.writeDisplay();
 
   Serial.begin(14400);
   while (!Serial && millis() < nextIdleTick + 2000);
@@ -202,20 +205,24 @@ void initializeTrellis() {
 }
 
 void initializeNfc() {
-  pinMode(MUSIC_RESET_PIN, OUTPUT);
-  digitalWrite(MUSIC_RESET_PIN, HIGH);
+  pinMode(NFC_RESET_PIN, OUTPUT);
+  digitalWrite(NFC_RESET_PIN, HIGH);
   nfc.begin();
   uint32_t versiondata = nfc.getFirmwareVersion();
   if (!versiondata) {
     Serial.println(F("PN532 failed"));
     return;
   }
-  
-  // Set the max number of retry attempts to read from a card.
-  // This prevents us from waiting forever for a card, which is the default behaviour of the PN532.
-  nfc.setPassiveActivationRetries(1);
-  
+
+  configNfc();
   Serial.println(F("PN532 initialized"));
+}
+
+// Set the max number of retry attempts to read from a card.
+// This prevents us from waiting forever for a card, which is the default behaviour of the PN532.
+void configNfc() {
+  nfc.setPassiveActivationRetries(1);
+  nfc.SAMConfig();  
 }
 
 void initializeTimer() {
@@ -465,9 +472,6 @@ unsigned long tickReadNfc(unsigned long now) {
     hexId.toUpperCase();
     Serial.print(F("NFC UID: 0x")); Serial.println(hexId);
     onNfcId(hexId);
-
-    enableNfc(false);
-    nextNfcTick = 0; // no nfc reading during playing
   } else {
     // No NFC card found, try again
     nextNfcTick = now + NFC_DELAY;
@@ -492,6 +496,7 @@ void onKey(byte index) {
     if (state == PLAY_SELECTED) stopPlaying();
     nextTimeoutTick = 0; // no timeout during playing
     nextNfcTick = 0; // no nfc reading during playing
+    enableNfc(false);
     enablePlayer(true);
     onStartFirstTrack(index);
     enableAmplifier(!headphone);
@@ -511,6 +516,8 @@ void onNfcId(String hexId) {
     playingAlbum = 0;
     blinkSelected(playingAlbum);
     nextTimeoutTick = 0; // no timeout during playing
+    nextNfcTick = 0; // no nfc reading during playing
+    enableNfc(false);
     enablePlayer(true);
     player.startPlayingFile(trackName.c_str());
     enableAmplifier(!headphone);
@@ -630,6 +637,7 @@ void stopPlaying() {
 }
 
 void enablePlayer(boolean enable) {
+  pinMode(MUSIC_RESET_PIN, OUTPUT);
   if (enable) {
     digitalWrite(MUSIC_RESET_PIN, HIGH);
     player.reset();
@@ -641,13 +649,19 @@ void enablePlayer(boolean enable) {
 }
 
 void enableAmplifier(boolean enable) {
+  pinMode(AMPLIFIER_ENABLE_PIN, OUTPUT);
   digitalWrite(AMPLIFIER_ENABLE_PIN, enable);
 }
 
 void enableNfc(boolean enable) {
-  digitalWrite(NFC_RESET_PIN, enable);
+  pinMode(NFC_RESET_PIN, OUTPUT);
   if (enable) {
-    nfc.SAMConfig();
+    Serial.println("Enable NFC");
+    digitalWrite(NFC_RESET_PIN, HIGH);
+    configNfc();
+  } else {
+    Serial.println("Disable NFC");
+    digitalWrite(NFC_RESET_PIN, LOW);    
   }
 }
 
