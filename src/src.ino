@@ -580,6 +580,7 @@ void onHeadphoneInserted(boolean plugged) {
     volume = volume + SPEAKER_VOLUME_MAX - HEADPHONE_VOLUME_MAX;
   }
   enableAmplifier(!headphone);
+  player.setVolume(volume, volume);
 }
 
 // Set volume for left, right channels. lower numbers == louder volume!
