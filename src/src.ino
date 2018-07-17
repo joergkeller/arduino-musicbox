@@ -214,15 +214,11 @@ void initializeNfc() {
     return;
   }
 
-  configNfc();
-  Serial.println(F("PN532 initialized"));
-}
-
-// Set the max number of retry attempts to read from a card.
-// This prevents us from waiting forever for a card, which is the default behaviour of the PN532.
-void configNfc() {
+  // Set the max number of retry attempts to read from a card.
+  // This prevents us from waiting forever for a card, which is the default behaviour of the PN532.
   nfc.setPassiveActivationRetries(1);
   nfc.SAMConfig();  
+  Serial.println(F("PN532 initialized"));
 }
 
 void initializeTimer() {
@@ -467,6 +463,9 @@ unsigned long tickReadNfc(unsigned long now) {
   if (nfc.readPassiveTargetID(PN532_MIFARE_ISO14443A, &uid[0], &uidLength)) {
     String hexId = String("");
     for (uint8_t i=0; i < uidLength; i++) {
+      if (uid[i] < 0x10) {
+        hexId += '0';
+      }
       hexId += String(uid[i], HEX);
     }
     hexId.toUpperCase();
@@ -658,7 +657,7 @@ void enableNfc(boolean enable) {
   if (enable) {
     Serial.println("Enable NFC");
     digitalWrite(NFC_RESET_PIN, HIGH);
-    configNfc();
+    initializeNfc();
   } else {
     Serial.println("Disable NFC");
     digitalWrite(NFC_RESET_PIN, LOW);    
