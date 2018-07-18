@@ -1,19 +1,22 @@
 /***************************************************
-  Arduino control code for a music maker board and a trellis keypad.
+  Arduino control code for a music maker board and a trellis keypad with optional nfc reader.
 
   The control code shall
+     animate the trellis keys while idle (/)
      read trellis keys (/)
      on key press play a music file from the micro SD card from a specific folder and blink the respective key (/)
-     on pressing the same key or when playback stops jump to the next file in the folder, until all music is played (/)
+     on pressing the same key or when playback stops jump to the next file in the folder, until all music of that folder is played (/)
      read the rotary decoder to change the volume, the maximum volume can be configured (/)
-     press the rotary decoder to pause/resume/stop/sleep (/)
+     press the rotary decoder to pause/resume (short) and stop/sleep (long) (/)
      detect when a headphone is plugged in and mute the amplifier for the internal speakers (/)
-     switch the music box off automatically after an idle period (/)
+     read nfc chips and play the configured file for the given id (/)
+     switch the music box off automatically (sleep mode) after an idle period, wake on key press (/)
 
   Todos:
    - Audio off when idle (volume 255,255) -> proper file padding needed (?)
 
   Written by Jörg Keller, Switzerland
+  https://github.com/joergkeller/arduino-musicbox
   MIT license, all text above must be included in any redistribution
  ****************************************************/
 
@@ -88,8 +91,11 @@
 #define SPEAKER_VOLUME_MAX           5    // min. 0 moderation
 #define HEADPHONE_VOLUME_MIN       150    // max. 254 moderation
 #define HEADPHONE_VOLUME_MAX        60    // min. 0 moderation
-#define VOLUME_DIRECTION            -1    // set direction of encoder-volume
+#define VOLUME_DIRECTION            -3    // set direction of encoder-volume
 #define VOLUME_OFF                 255    // 255 = switch audio off, TODO avoiding cracking noise, maybe correct stuffing needed when stop
+
+// NFC reader
+#define NFC_RETRIES   0    // 0 = one try, 255 = retry forever
 
 /***************************************************
    Variables
@@ -125,7 +131,7 @@ void setup() {
   trellis.writeDisplay();
 
   Serial.begin(14400);
-  while (!Serial && millis() < nextIdleTick + 2000);
+  while (!Serial && millis() < nextIdleTick + 200);
   Serial.println(F("MusicBox setup"));
 
   initializeSwitchLed();                    
@@ -216,7 +222,7 @@ void initializeNfc() {
 
   // Set the max number of retry attempts to read from a card.
   // This prevents us from waiting forever for a card, which is the default behaviour of the PN532.
-  nfc.setPassiveActivationRetries(1);
+  nfc.setPassiveActivationRetries(NFC_RETRIES);
   nfc.SAMConfig();  
   Serial.println(F("PN532 initialized"));
 }
