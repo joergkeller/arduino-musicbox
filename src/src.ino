@@ -87,10 +87,10 @@
 #define TIMEOUT_WAIT    7 
 
 // Volume
-#define SPEAKER_VOLUME_MIN         130    // max. 254 moderation
+#define SPEAKER_VOLUME_MIN         100    // max. 254 moderation
 #define SPEAKER_VOLUME_MAX           5    // min. 0 moderation
-#define HEADPHONE_VOLUME_MIN       150    // max. 254 moderation
-#define HEADPHONE_VOLUME_MAX        60    // min. 0 moderation
+#define HEADPHONE_VOLUME_MIN       100    // max. 254 moderation
+#define HEADPHONE_VOLUME_MAX        15    // min. 0 moderation
 #define VOLUME_DIRECTION            -3    // set direction of encoder-volume
 #define VOLUME_OFF                 255    // 255 = switch audio off, TODO avoiding cracking noise, maybe correct stuffing needed when stop
 
@@ -586,6 +586,7 @@ void onHeadphoneInserted(boolean plugged) {
     volume = volume + SPEAKER_VOLUME_MAX - HEADPHONE_VOLUME_MAX;
   }
   enableAmplifier(!headphone);
+  Serial.print(F("Set Volume ")); Serial.println(volume);
   player.setVolume(volume, volume);
 }
 
