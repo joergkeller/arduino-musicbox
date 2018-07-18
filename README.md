@@ -1,6 +1,6 @@
 # Arduino MusicBox
 
-Arduino control code for a music maker board and a trellis keypad.
+Arduino control code for a music maker board and a trellis keypad with optional nfc reader.
 
 Hardware parts:
 * Adafruit Feather 32u4 Basic Proto
