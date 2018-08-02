@@ -167,19 +167,28 @@ void initializeCard() {
   Serial.println(F("SD initialized"));
 
   File root = SD.open(F("/"));
+  printDirectory(root, 0);
+  root.close();
+}
+
+void printDirectory(File dir, int numTabs) {
   while (true) {
-    File entry = root.openNextFile();
+    File entry = dir.openNextFile();
     if (!entry) break;
+    for (uint8_t i = 0; i < numTabs; i++) {
+      Serial.print('\t');
+    }
     Serial.print(entry.name());
     if (entry.isDirectory()) {
       Serial.println(F("/"));
+      printDirectory(entry, numTabs+1);
     } else {
       Serial.print(F("\t\t"));
       Serial.println(entry.size(), DEC);
     }
     entry.close();
   }
-  root.close();
+
 }
 
 void initializePlayer() {
