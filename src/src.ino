@@ -510,23 +510,36 @@ void onKey(byte index) {
 
 void onNfcId(String hexId) {
   if (state == PLAY_SELECTED || state == PLAY_PAUSED) {
-    ; // nop
-  } else {
-    File file = SD.open("nfc.cfg");
-    Properties cfg = Properties(file);
-    String trackName = cfg.readString(hexId);
-    Serial.print(F("Playing file ")); Serial.println(trackName);
-
-    state = PLAY_SELECTED;
-    playingAlbum = 0;
-    blinkSelected(playingAlbum);
-    nextTimeoutTick = 0; // no timeout during playing
-    nextNfcTick = 0; // no nfc reading during playing
-    enableNfc(false);
-    enablePlayer(true);
-    player.startPlayingFile(trackName.c_str());
-    enableAmplifier(!headphone);
+    return;
   }
+
+  File file = SD.open("nfc.cfg");
+  Properties cfg = Properties(file);
+  String trackName = cfg.readString(hexId);
+  file.close();
+
+  if (trackName.length() == 0) {
+    Serial.print(F("Unknown nfc id ")); Serial.println(hexId);
+    File file = SD.open("nfc.cfg", FILE_WRITE);
+    file.write(&hexId);
+    file.write("=\n");
+    file.close();
+  } else {
+    Serial.print(F("Playing file ")); Serial.println(trackName);
+    onNfcPlay(trackName);
+  }
+}
+
+void onNfcPlay(String trackName) {
+  state = PLAY_SELECTED;
+  playingAlbum = 0;
+  blinkSelected(playingAlbum);
+  nextTimeoutTick = 0; // no timeout during playing
+  nextNfcTick = 0; // no nfc reading during playing
+  enableNfc(false);
+  enablePlayer(true);
+  player.startPlayingFile(trackName.c_str());
+  enableAmplifier(!headphone);
 }
 
 void onStartFirstTrack(byte index) {
