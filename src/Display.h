@@ -39,10 +39,17 @@ class Display {
     Display();
     void initialize();
     void tickMs();
+
     void onIdle();
     void onBlink(byte index, bool fast);
+
+    void waitForNoKeyPressed();
+    int getPressedKey();
+
     void onSleep();
     void onWakeup();
+    void enableInterrupt(void (*isr)(void));
+    void disableInterrupt();
 
   private:
     Adafruit_Trellis trellis;

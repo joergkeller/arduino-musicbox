@@ -23,7 +23,8 @@ void Display::initialize() {
   // this is also the MIDI Tx pin recommended to bound to high
   pinMode(TRELLIS_INT_PIN, INPUT_PULLUP);
 
-  trellis.readSwitches(); // ignore already pressed switches
+  // ignore already pressed switches
+  trellis.readSwitches(); 
   Serial.println("Trellis initialized");
 }
 
@@ -92,6 +93,30 @@ void Display::onBlink(byte index, bool fast) {
   trellis.writeDisplay();
 }
 
+void Display::waitForNoKeyPressed() {
+  unsigned long timeout = millis() + 1000;
+  while (millis() <= timeout) { 
+    byte keyPressed = 0;
+    trellis.readSwitches();
+    for (byte i = 0; i < NUMKEYS; i++) {
+      keyPressed += trellis.isKeyPressed(i) ? 1 : 0;
+    }
+    if (keyPressed == 0) return;
+    delay(20);
+  }
+}
+
+int Display::getPressedKey() {
+  if (trellis.readSwitches()) {
+    for (byte i = 0; i < NUMKEYS; i++) {
+      if (trellis.justPressed(i)) {
+        return i;
+      }
+    }
+  }
+  return -1;
+}
+
 void Display::onSleep() {
   state = UNDEFINED;
   trellis.clear();
@@ -102,5 +127,13 @@ void Display::onSleep() {
 void Display::onWakeup() {
   state = UNDEFINED;
   trellis.wakeup();
+}
+
+void Display::enableInterrupt(void (*isr)(void)) {
+  attachInterrupt(digitalPinToInterrupt(TRELLIS_INT_PIN), isr, LOW);
+}
+
+void Display::disableInterrupt() {
+  detachInterrupt(digitalPinToInterrupt(TRELLIS_INT_PIN));
 }
 

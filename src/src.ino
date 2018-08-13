@@ -24,7 +24,6 @@
 #include <SPI.h>
 #include <SD.h>
 #include <Adafruit_VS1053.h>
-#include <Adafruit_Trellis.h>
 #include <ClickEncoder.h>
 #include <TimerOne.h>
 #include <LowPower.h>
@@ -36,24 +35,12 @@
 
 
 // Delays [ms]
-#define BLANK_DELAY    2500
-#define BLINK_DELAY      20
-#define HOLD_DELAY     1500
 #define PAUSE_DELAY    1000
 #define READ_DELAY       50
 #define NFC_DELAY      1000
 #define IDLE_TIMEOUT  (1000L * 60L * 15L)
 #define PAUSE_TIMEOUT (1000L * 60L * 60L)
 #define ROLLOVER_GAP  (1000L * 60L * 60L)
-
-// Trellis LED brightness 1..15
-#define BRIGHTNESS_SLEEPTICK  0
-#define BRIGHTNESS_IDLE      10
-#define BRIGHTNESS_PLAYING   10
-
-// Trellis setup
-#define NUMKEYS           16
-#define TRELLIS_INT_PIN    1
 
 // Feather/Wing pin setup
 #define MUSIC_RESET_PIN   12     // VS1053 reset pin
@@ -99,7 +86,6 @@
    Variables
  ****************************************************/
 Display display = Display();
-Adafruit_Trellis trellis = Adafruit_Trellis();
 Adafruit_VS1053_FilePlayer player = Adafruit_VS1053_FilePlayer(MUSIC_RESET_PIN, MUSIC_CS_PIN, MUSIC_DCS_PIN, MUSIC_DREQ_PIN, CARD_CS_PIN);
 ClickEncoder encoder = ClickEncoder(ENCODER_A_PIN, ENCODER_B_PIN, ENCODER_SWITCH_PIN, 2, LOW, HIGH);
 PN532_I2C pn532i2c(Wire);
@@ -130,8 +116,6 @@ void setup() {
   Serial.println(F("MusicBox setup"));
 
   display.initialize();
-trellis.begin(0x70);
-trellis.readSwitches();
   initializeSwitchLed();                    
   initializeNfc();
   initializePlayer();
@@ -300,7 +284,7 @@ void tickIdleTimeout(unsigned long now) {
   Serial.println(F("Timeout!"));
   onTimeout();
 
-  attachInterrupt(digitalPinToInterrupt(TRELLIS_INT_PIN), trellisIsr, LOW);
+  display.enableInterrupt(trellisIsr);
   LowPower.powerDown(SLEEP_8S, ADC_OFF, BOD_OFF); 
 
   if (state == TIMEOUT_WAIT) {
@@ -331,39 +315,21 @@ void blinkLED(int pin) {
 }
 
 void trellisIsr() {
-  detachInterrupt(digitalPinToInterrupt(TRELLIS_INT_PIN));
+  display.disableInterrupt();
   state = IDLE;
 }
 
 void onSleepWake() {
   display.onWakeup();
-  waitForNoKeyPressed();
+  display.waitForNoKeyPressed();
   onEnterIdle(0);
-}
-
-void waitForNoKeyPressed() {
-  unsigned long timeout = millis() + 1000;
-  while (millis() <= timeout) { 
-    byte keyPressed = 0;
-    trellis.readSwitches();
-    for (byte i = 0; i < NUMKEYS; i++) {
-      keyPressed += trellis.isKeyPressed(i) ? 1 : 0;
-    }
-    if (keyPressed == 0) return;
-    delay(20);
-  }
 }
 
 void tickReadKeys(unsigned long now) {
   // Read trellis keys
-  if (trellis.readSwitches()) {
-    for (byte i = 0; i < NUMKEYS; i++) {
-      if (trellis.justPressed(i)) {
-        if (state == TIMEOUT_WAIT) onSleepWake();
-        onKey(i);
-        break;
-      }
-    }
+  int index = display.getPressedKey();
+  if (index != -1) {
+    onKey(index);
   }
 
   // Read encoder position
