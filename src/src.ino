@@ -24,7 +24,6 @@
 #include <SPI.h>
 #include <SD.h>
 #include <Adafruit_VS1053.h>
-#include <Adafruit_Trellis.h>
 #include <ClickEncoder.h>
 #include <TimerOne.h>
 #include <LowPower.h>
@@ -32,27 +31,16 @@
 #include <PN532.h>
 #include <NfcAdapter.h>
 #include <Properties.h>
+#include "Matrix.h"
 
 
 // Delays [ms]
-#define BLANK_DELAY    2500
-#define BLINK_DELAY      20
-#define HOLD_DELAY     1500
 #define PAUSE_DELAY    1000
 #define READ_DELAY       50
 #define NFC_DELAY      1000
 #define IDLE_TIMEOUT  (1000L * 60L * 15L)
 #define PAUSE_TIMEOUT (1000L * 60L * 60L)
 #define ROLLOVER_GAP  (1000L * 60L * 60L)
-
-// Trellis LED brightness 1..15
-#define BRIGHTNESS_SLEEPTICK  0
-#define BRIGHTNESS_IDLE      10
-#define BRIGHTNESS_PLAYING   10
-
-// Trellis setup
-#define NUMKEYS           16
-#define TRELLIS_INT_PIN    1
 
 // Feather/Wing pin setup
 #define MUSIC_RESET_PIN   12     // VS1053 reset pin
@@ -78,13 +66,10 @@
 #define NFC_RESET_PIN   13    // PN532 reset pin
 
 // States
-#define IDLE_LIGHT_UP   1
-#define IDLE_WAIT_ON    2
-#define IDLE_TURN_OFF   3
-#define IDLE_WAIT_OFF   4
-#define PLAY_SELECTED   5
-#define PLAY_PAUSED     6
-#define TIMEOUT_WAIT    7 
+#define IDLE            1
+#define PLAY_SELECTED   2
+#define PLAY_PAUSED     3
+#define TIMEOUT_WAIT    4 
 
 // Volume
 #define SPEAKER_VOLUME_MIN         100    // max. 254 moderation
@@ -100,8 +85,7 @@
 /***************************************************
    Variables
  ****************************************************/
-
-Adafruit_Trellis trellis = Adafruit_Trellis();
+Matrix matrix = Matrix();
 Adafruit_VS1053_FilePlayer player = Adafruit_VS1053_FilePlayer(MUSIC_RESET_PIN, MUSIC_CS_PIN, MUSIC_DCS_PIN, MUSIC_DREQ_PIN, CARD_CS_PIN);
 ClickEncoder encoder = ClickEncoder(ENCODER_A_PIN, ENCODER_B_PIN, ENCODER_SWITCH_PIN, 2, LOW, HIGH);
 PN532_I2C pn532i2c(Wire);
@@ -112,13 +96,13 @@ unsigned long nextReadTick = millis() + 1;
 unsigned long nextNfcTick = millis() + 1;
 unsigned long nextIdleTick = millis() + 1;
 unsigned long nextTimeoutTick = 0;
-byte state = IDLE_LIGHT_UP;
-byte nextLED = 0;
+byte state = IDLE;
 byte playingAlbum;
 File album;
 int volume = 35;
 boolean headphone = false;
 boolean headphoneFirstMeasure = false;
+boolean tickMs = false;
 
 
 /***************************************************
@@ -126,16 +110,13 @@ boolean headphoneFirstMeasure = false;
  ****************************************************/
 void setup() {
   initializeAmplifier();
-  trellis.begin(0x70);
-  trellis.clear();
-  trellis.writeDisplay();
 
   Serial.begin(14400);
-  while (!Serial && millis() < nextIdleTick + 200);
+  while (!Serial && millis() < nextIdleTick + 75);
   Serial.println(F("MusicBox setup"));
 
+  matrix.initialize();
   initializeSwitchLed();                    
-  initializeTrellis();
   initializeNfc();
   initializePlayer();
   initializeCard();
@@ -166,9 +147,9 @@ void initializeCard() {
   }
   Serial.println(F("SD initialized"));
 
-  File root = SD.open(F("/"));
-  printDirectory(root, 0);
-  root.close();
+//  File root = SD.open(F("/"));
+//  printDirectory(root, 0);
+//  root.close();
 }
 
 void printDirectory(File dir, int numTabs) {
@@ -188,7 +169,6 @@ void printDirectory(File dir, int numTabs) {
     }
     entry.close();
   }
-
 }
 
 void initializePlayer() {
@@ -207,16 +187,6 @@ void initializePlayer() {
   Serial.println(F("VS1053 initialized"));
 
   enablePlayer(false);
-}
-
-void initializeTrellis() {
-  // INT pin requires a pullup;
-  // this is also the MIDI Tx pin recommended to bound to high
-  pinMode(TRELLIS_INT_PIN, INPUT_PULLUP);
-
-  trellis.begin(0x70);
-  trellis.readSwitches(); // ignore already pressed switches
-  Serial.println(F("Trellis initialized"));
 }
 
 void initializeNfc() {
@@ -243,19 +213,14 @@ void initializeTimer() {
 }
 
 void onEnterIdle(unsigned int delay) {
-  trellis.setBrightness(BRIGHTNESS_IDLE);
-  trellis.blinkRate(HT16K33_BLINK_OFF);
-  trellis.clear();
-  trellis.writeDisplay();
+  state = IDLE;
+  matrix.idle();
   enableNfc(true);
   
   nextReadTick = millis() + 1;
   nextNfcTick = millis() + 1;
   nextIdleTick = millis() + 1 + delay;
   nextTimeoutTick = millis() + IDLE_TIMEOUT;
-
-  state = IDLE_LIGHT_UP;
-  nextLED = 0;
 }
 
 
@@ -264,6 +229,7 @@ void onEnterIdle(unsigned int delay) {
  ****************************************************/
 void timerIsr() {
   encoder.service();
+  tickMs = true;
 }
 
 /***************************************************
@@ -293,6 +259,10 @@ void loop() {
   if (0 < nextIdleTick && nextIdleTick <= now) {
     tickIdleShow(now);
   }
+  if (tickMs) {
+    matrix.tickMs();
+    tickMs = false;
+  }
 
   // Check for finished track
   if (state == PLAY_SELECTED) {
@@ -301,42 +271,8 @@ void loop() {
 }
 
 void tickIdleShow(unsigned long now) {
-  // Light up all keys in order
-  if (state == IDLE_LIGHT_UP) {
-    trellis.setLED(nextLED);
-    trellis.writeDisplay();
-    nextLED = (nextLED + 1) % NUMKEYS;
-    if (nextLED == 0) {
-      state = IDLE_WAIT_ON;
-    }
-    nextIdleTick = now + BLINK_DELAY;
-
-  // Wait with all keys lighted
-  } else if (state == IDLE_WAIT_ON) {
-    state = IDLE_TURN_OFF;
-    nextIdleTick = now + HOLD_DELAY;
-
-  // Turn off all keys in order
-  } else if (state == IDLE_TURN_OFF) {
-    trellis.clrLED(nextLED);
-    trellis.writeDisplay();
-    nextLED = (nextLED + 1) % NUMKEYS;
-    if (nextLED == 0) {
-      state = IDLE_WAIT_OFF;
-      nextIdleTick = now + BLANK_DELAY;
-      return;
-    }
-    nextIdleTick = now + BLINK_DELAY;
-
-  // Wait in darkness
-  } else if (state == IDLE_WAIT_OFF) {
-    trellis.clear(); // just to clean up
-    trellis.writeDisplay();
-    state = IDLE_LIGHT_UP;
-    nextIdleTick = now + BLINK_DELAY;
-
   // Blink in pause mode
-  } else if (state == PLAY_PAUSED) {
+  if (state == PLAY_PAUSED) {
     blinkLED(BLUE_LED_PIN);
     nextIdleTick = now + PAUSE_DELAY;
   }
@@ -346,7 +282,7 @@ void tickIdleTimeout(unsigned long now) {
   Serial.println(F("Timeout!"));
   onTimeout();
 
-  attachInterrupt(digitalPinToInterrupt(TRELLIS_INT_PIN), trellisIsr, LOW);
+  matrix.enableInterrupt(trellisIsr);
   LowPower.powerDown(SLEEP_8S, ADC_OFF, BOD_OFF); 
 
   if (state == TIMEOUT_WAIT) {
@@ -358,9 +294,7 @@ void tickIdleTimeout(unsigned long now) {
 }
 
 void onTimeout() {
-  trellis.clear();
-  trellis.writeDisplay();
-  trellis.sleep();
+  matrix.sleep();
   enableNfc(false);
   enablePlayer(false);
   enableAmplifier(false);
@@ -372,46 +306,28 @@ void onWatchdogPing() {
   blinkLED(BLUE_LED_PIN);
 }
 
+void trellisIsr() {
+  matrix.disableInterrupt();
+  state = IDLE;
+}
+
+void onSleepWake() {
+  matrix.wakeup();
+  matrix.waitForNoKeyPressed();
+  onEnterIdle(0);
+}
+
 void blinkLED(int pin) {
   digitalWrite(pin, LOW); // LED on
   delay(1);
   digitalWrite(pin, HIGH); // LED off
 }
 
-void trellisIsr() {
-  detachInterrupt(digitalPinToInterrupt(TRELLIS_INT_PIN));
-  state = IDLE_LIGHT_UP;
-}
-
-void onSleepWake() {
-  trellis.wakeup();
-  waitForNoKeyPressed();
-  onEnterIdle(0);
-}
-
-void waitForNoKeyPressed() {
-  unsigned long timeout = millis() + 1000;
-  while (millis() <= timeout) { 
-    byte keyPressed = 0;
-    trellis.readSwitches();
-    for (byte i = 0; i < NUMKEYS; i++) {
-      keyPressed += trellis.isKeyPressed(i) ? 1 : 0;
-    }
-    if (keyPressed == 0) return;
-    delay(20);
-  }
-}
-
 void tickReadKeys(unsigned long now) {
   // Read trellis keys
-  if (trellis.readSwitches()) {
-    for (byte i = 0; i < NUMKEYS; i++) {
-      if (trellis.justPressed(i)) {
-        if (state == TIMEOUT_WAIT) onSleepWake();
-        onKey(i);
-        break;
-      }
-    }
+  int index = matrix.getPressedKey();
+  if (index != -1) {
+    onKey(index);
   }
 
   // Read encoder position
@@ -441,9 +357,7 @@ void tickReadKeys(unsigned long now) {
         onStopPlaying();
       break;
 
-      case IDLE_LIGHT_UP:
-      case IDLE_TURN_OFF:
-      case IDLE_WAIT_OFF:
+      case IDLE:
         Serial.println(F("Force timeout"));
         blinkLED(GREEN_LED_PIN);
         delay(300);
@@ -542,7 +456,7 @@ void onNfcId(String hexId) {
 void onNfcPlay(String trackName) {
   state = PLAY_SELECTED;
   playingAlbum = 0;
-  blinkSelected(playingAlbum);
+  matrix.blink(playingAlbum, true);
   nextTimeoutTick = 0; // no timeout during playing
   nextNfcTick = 0; // no nfc reading during playing
   enableNfc(false);
@@ -553,7 +467,7 @@ void onNfcPlay(String trackName) {
 
 void onStartFirstTrack(byte index) {
   playingAlbum = index;
-  blinkSelected(playingAlbum);
+  matrix.blink(playingAlbum, true);
   openNewAlbum(playingAlbum);
   if (playNextTrack()) {
     Serial.print(F("Playing album #")); Serial.println(playingAlbum);
@@ -567,7 +481,7 @@ void onStartFirstTrack(byte index) {
 void onTryNextTrack() {
   if (playNextTrack()) {
     Serial.print(F("Playing next track album #")); Serial.println(playingAlbum);
-    blinkSelected(playingAlbum);
+    matrix.blink(playingAlbum, true);
     state = PLAY_SELECTED;
   } else {
     Serial.print(F("Ended album #")); Serial.println(playingAlbum);
@@ -578,14 +492,14 @@ void onTryNextTrack() {
 void onPause(bool pause) {
   if (pause) {
     Serial.println(F("Pause"));
-    trellis.blinkRate(HT16K33_BLINK_HALFHZ);
+    matrix.blink(playingAlbum, false);
     player.pausePlaying(true);
     enableAmplifier(false);
     nextTimeoutTick = millis() + PAUSE_TIMEOUT;
     state = PLAY_PAUSED;
   } else {
     Serial.println(F("Resume"));
-    trellis.blinkRate(HT16K33_BLINK_1HZ);
+    matrix.blink(playingAlbum, true);
     enableAmplifier(!headphone);
     player.pausePlaying(false);
     nextTimeoutTick = 0; // no timeout during playing
@@ -627,14 +541,6 @@ void changeVolume(int encoderChange) {
   }
   Serial.print(F("Set Volume ")); Serial.println(volume);
   player.setVolume(volume, volume);
-}
-
-void blinkSelected(byte index) {
-  trellis.clear();
-  trellis.setBrightness(BRIGHTNESS_PLAYING);
-  trellis.setLED(index);
-  trellis.blinkRate(HT16K33_BLINK_1HZ);
-  trellis.writeDisplay();
 }
 
 boolean openNewAlbum(byte index) {
