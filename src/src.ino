@@ -31,7 +31,7 @@
 #include <PN532.h>
 #include <NfcAdapter.h>
 #include <Properties.h>
-#include "Display.h"
+#include "Matrix.h"
 
 
 // Delays [ms]
@@ -85,7 +85,7 @@
 /***************************************************
    Variables
  ****************************************************/
-Display display = Display();
+Matrix matrix = Matrix();
 Adafruit_VS1053_FilePlayer player = Adafruit_VS1053_FilePlayer(MUSIC_RESET_PIN, MUSIC_CS_PIN, MUSIC_DCS_PIN, MUSIC_DREQ_PIN, CARD_CS_PIN);
 ClickEncoder encoder = ClickEncoder(ENCODER_A_PIN, ENCODER_B_PIN, ENCODER_SWITCH_PIN, 2, LOW, HIGH);
 PN532_I2C pn532i2c(Wire);
@@ -112,10 +112,10 @@ void setup() {
   initializeAmplifier();
 
   Serial.begin(14400);
-  while (!Serial && millis() < nextIdleTick + 1000);
+  while (!Serial && millis() < nextIdleTick + 75);
   Serial.println(F("MusicBox setup"));
 
-  display.initialize();
+  matrix.initialize();
   initializeSwitchLed();                    
   initializeNfc();
   initializePlayer();
@@ -152,7 +152,6 @@ void initializeCard() {
 //  root.close();
 }
 
-/*
 void printDirectory(File dir, int numTabs) {
   while (true) {
     File entry = dir.openNextFile();
@@ -171,7 +170,6 @@ void printDirectory(File dir, int numTabs) {
     entry.close();
   }
 }
-*/
 
 void initializePlayer() {
   pinMode(MUSIC_RESET_PIN, OUTPUT);
@@ -216,7 +214,7 @@ void initializeTimer() {
 
 void onEnterIdle(unsigned int delay) {
   state = IDLE;
-  display.onIdle();
+  matrix.idle();
   enableNfc(true);
   
   nextReadTick = millis() + 1;
@@ -262,7 +260,7 @@ void loop() {
     tickIdleShow(now);
   }
   if (tickMs) {
-    display.tickMs();
+    matrix.tickMs();
     tickMs = false;
   }
 
@@ -284,7 +282,7 @@ void tickIdleTimeout(unsigned long now) {
   Serial.println(F("Timeout!"));
   onTimeout();
 
-  display.enableInterrupt(trellisIsr);
+  matrix.enableInterrupt(trellisIsr);
   LowPower.powerDown(SLEEP_8S, ADC_OFF, BOD_OFF); 
 
   if (state == TIMEOUT_WAIT) {
@@ -296,7 +294,7 @@ void tickIdleTimeout(unsigned long now) {
 }
 
 void onTimeout() {
-  display.onSleep();
+  matrix.sleep();
   enableNfc(false);
   enablePlayer(false);
   enableAmplifier(false);
@@ -308,26 +306,26 @@ void onWatchdogPing() {
   blinkLED(BLUE_LED_PIN);
 }
 
+void trellisIsr() {
+  matrix.disableInterrupt();
+  state = IDLE;
+}
+
+void onSleepWake() {
+  matrix.wakeup();
+  matrix.waitForNoKeyPressed();
+  onEnterIdle(0);
+}
+
 void blinkLED(int pin) {
   digitalWrite(pin, LOW); // LED on
   delay(1);
   digitalWrite(pin, HIGH); // LED off
 }
 
-void trellisIsr() {
-  display.disableInterrupt();
-  state = IDLE;
-}
-
-void onSleepWake() {
-  display.onWakeup();
-  display.waitForNoKeyPressed();
-  onEnterIdle(0);
-}
-
 void tickReadKeys(unsigned long now) {
   // Read trellis keys
-  int index = display.getPressedKey();
+  int index = matrix.getPressedKey();
   if (index != -1) {
     onKey(index);
   }
@@ -458,7 +456,7 @@ void onNfcId(String hexId) {
 void onNfcPlay(String trackName) {
   state = PLAY_SELECTED;
   playingAlbum = 0;
-  display.onBlink(playingAlbum, true);
+  matrix.blink(playingAlbum, true);
   nextTimeoutTick = 0; // no timeout during playing
   nextNfcTick = 0; // no nfc reading during playing
   enableNfc(false);
@@ -469,7 +467,7 @@ void onNfcPlay(String trackName) {
 
 void onStartFirstTrack(byte index) {
   playingAlbum = index;
-  display.onBlink(playingAlbum, true);
+  matrix.blink(playingAlbum, true);
   openNewAlbum(playingAlbum);
   if (playNextTrack()) {
     Serial.print(F("Playing album #")); Serial.println(playingAlbum);
@@ -483,7 +481,7 @@ void onStartFirstTrack(byte index) {
 void onTryNextTrack() {
   if (playNextTrack()) {
     Serial.print(F("Playing next track album #")); Serial.println(playingAlbum);
-    display.onBlink(playingAlbum, true);
+    matrix.blink(playingAlbum, true);
     state = PLAY_SELECTED;
   } else {
     Serial.print(F("Ended album #")); Serial.println(playingAlbum);
@@ -494,14 +492,14 @@ void onTryNextTrack() {
 void onPause(bool pause) {
   if (pause) {
     Serial.println(F("Pause"));
-    display.onBlink(playingAlbum, false);
+    matrix.blink(playingAlbum, false);
     player.pausePlaying(true);
     enableAmplifier(false);
     nextTimeoutTick = millis() + PAUSE_TIMEOUT;
     state = PLAY_PAUSED;
   } else {
     Serial.println(F("Resume"));
-    display.onBlink(playingAlbum, true);
+    matrix.blink(playingAlbum, true);
     enableAmplifier(!headphone);
     player.pausePlaying(false);
     nextTimeoutTick = 0; // no timeout during playing
