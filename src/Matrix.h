@@ -46,7 +46,7 @@ class Matrix {
   private:
     const Adafruit_Trellis trellis = Adafruit_Trellis();
     const ShowAbstract& show = SHOW_CLASS(trellis);
-    bool isIdle;
+    bool isIdle = false;
 };
 
 #endif

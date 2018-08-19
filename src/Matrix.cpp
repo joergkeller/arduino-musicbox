@@ -9,7 +9,9 @@
 #include "Matrix.h"
 
 Matrix::Matrix() {
-  isIdle = false;
+  // INT pin requires a pullup;
+  // this is also the MIDI Tx pin recommended to bound to high
+  pinMode(TRELLIS_INT_PIN, INPUT_PULLUP);
 }
 
 void Matrix::initialize() {
@@ -17,10 +19,6 @@ void Matrix::initialize() {
   trellis.begin(0x70);
   trellis.clear();
   trellis.writeDisplay();
-
-  // INT pin requires a pullup;
-  // this is also the MIDI Tx pin recommended to bound to high
-  pinMode(TRELLIS_INT_PIN, INPUT_PULLUP);
 
   // ignore already pressed switches
   trellis.readSwitches(); 

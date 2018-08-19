@@ -23,7 +23,6 @@
 #include <Wire.h>
 #include <SPI.h>
 #include <SD.h>
-#include <Adafruit_VS1053.h>
 #include <ClickEncoder.h>
 #include <TimerOne.h>
 #include <LowPower.h>
@@ -32,6 +31,7 @@
 #include <NfcAdapter.h>
 #include <Properties.h>
 #include "Matrix.h"
+#include "Player.h"
 
 
 // Delays [ms]
@@ -42,18 +42,6 @@
 #define PAUSE_TIMEOUT (1000L * 60L * 60L)
 #define ROLLOVER_GAP  (1000L * 60L * 60L)
 
-// Feather/Wing pin setup
-#define MUSIC_RESET_PIN   12     // VS1053 reset pin
-#define CARD_CS_PIN        5     // Card chip select pin
-#define MUSIC_CS_PIN       6     // VS1053 chip select pin (output)
-#define MUSIC_DCS_PIN     10     // VS1053 Data/command select pin (output)
-#define MUSIC_DREQ_PIN     9     // VS1053 Data request, ideally an Interrupt pin (not possible on 32u4)
-
-// Amplifier pin setup
-#define AMPLIFIER_ENABLE_PIN   11   // Enable both amplifier channels
-#define HEADPHONE_LEVEL_PIN    A2   // Voltage level indicates headphone plugin
-#define HEADPHONE_THRESHOLD   100   // Plugged-in: ~20, Unplugged: ~890
-
 // Rotary Encoder with Switch and LED
 #define ENCODER_A_PIN       A0
 #define ENCODER_B_PIN       A1
@@ -61,6 +49,7 @@
 #define RED_LED_PIN         A3
 #define GREEN_LED_PIN       A4
 #define BLUE_LED_PIN        A5
+#define VOLUME_DIRECTION    -3    // set direction of encoder-volume
 
 // NFC pin setup
 #define NFC_RESET_PIN   13    // PN532 reset pin
@@ -71,14 +60,6 @@
 #define PLAY_PAUSED     3
 #define TIMEOUT_WAIT    4 
 
-// Volume
-#define SPEAKER_VOLUME_MIN         100    // max. 254 moderation
-#define SPEAKER_VOLUME_MAX           5    // min. 0 moderation
-#define HEADPHONE_VOLUME_MIN       100    // max. 254 moderation
-#define HEADPHONE_VOLUME_MAX        15    // min. 0 moderation
-#define VOLUME_DIRECTION            -3    // set direction of encoder-volume
-#define VOLUME_OFF                 255    // 255 = switch audio off, TODO avoiding cracking noise, maybe correct stuffing needed when stop
-
 // NFC reader
 #define NFC_RETRIES   0    // 0 = one try, 255 = retry forever
 
@@ -86,7 +67,7 @@
    Variables
  ****************************************************/
 Matrix matrix = Matrix();
-Adafruit_VS1053_FilePlayer player = Adafruit_VS1053_FilePlayer(MUSIC_RESET_PIN, MUSIC_CS_PIN, MUSIC_DCS_PIN, MUSIC_DREQ_PIN, CARD_CS_PIN);
+Player player = Player();
 ClickEncoder encoder = ClickEncoder(ENCODER_A_PIN, ENCODER_B_PIN, ENCODER_SWITCH_PIN, 2, LOW, HIGH);
 PN532_I2C pn532i2c(Wire);
 PN532 nfc(pn532i2c);
@@ -98,28 +79,21 @@ unsigned long nextIdleTick = millis() + 1;
 unsigned long nextTimeoutTick = 0;
 byte state = IDLE;
 byte playingAlbum;
-File album;
-int volume = 35;
-boolean headphone = false;
-boolean headphoneFirstMeasure = false;
-boolean tickMs = false;
+bool tickMs = false;
 
 
 /***************************************************
    Setup
  ****************************************************/
 void setup() {
-  initializeAmplifier();
-
   Serial.begin(14400);
   while (!Serial && millis() < nextIdleTick + 75);
   Serial.println(F("MusicBox setup"));
 
   matrix.initialize();
+  player.initialize();
   initializeSwitchLed();                    
   initializeNfc();
-  initializePlayer();
-  initializeCard();
   initializeTimer();
 
   onEnterIdle(0);
@@ -132,61 +106,6 @@ void initializeSwitchLed() {
   digitalWrite(RED_LED_PIN, HIGH);   // LED off
   digitalWrite(GREEN_LED_PIN, HIGH); // LED off
   digitalWrite(BLUE_LED_PIN, HIGH);  // LED off
-}
-
-void initializeAmplifier() {
-  pinMode(AMPLIFIER_ENABLE_PIN, OUTPUT);
-  pinMode(HEADPHONE_LEVEL_PIN, INPUT_PULLUP);
-  enableAmplifier(false);
-}
-
-void initializeCard() {
-  if (!SD.begin(CARD_CS_PIN)) {
-    Serial.println(F("SD failed or not inserted"));
-    return;  // don't do anything more
-  }
-  Serial.println(F("SD initialized"));
-
-//  File root = SD.open(F("/"));
-//  printDirectory(root, 0);
-//  root.close();
-}
-
-void printDirectory(File dir, int numTabs) {
-  while (true) {
-    File entry = dir.openNextFile();
-    if (!entry) break;
-    for (uint8_t i = 0; i < numTabs; i++) {
-      Serial.print('\t');
-    }
-    Serial.print(entry.name());
-    if (entry.isDirectory()) {
-      Serial.println(F("/"));
-      printDirectory(entry, numTabs+1);
-    } else {
-      Serial.print(F("\t\t"));
-      Serial.println(entry.size(), DEC);
-    }
-    entry.close();
-  }
-}
-
-void initializePlayer() {
-  pinMode(MUSIC_RESET_PIN, OUTPUT);
-  digitalWrite(MUSIC_RESET_PIN, HIGH);
-  if (!player.begin()) {
-    Serial.println(F("VS1053 failed"));
-    return;
-  }
-  player.softReset();
-  //player.sineTest(0x44, 500);    // Make a tone to indicate VS1053 is working
-
-  // Timer interrupts are not suggested, better to use DREQ interrupt!
-  // but we don't have them on the 32u4 feather...
-  player.useInterrupt(VS1053_FILEPLAYER_TIMER0_INT); // timer int
-  Serial.println(F("VS1053 initialized"));
-
-  enablePlayer(false);
 }
 
 void initializeNfc() {
@@ -266,7 +185,7 @@ void loop() {
 
   // Check for finished track
   if (state == PLAY_SELECTED) {
-    if (player.stopped()) onTryNextTrack();
+    if (player.hasStopped()) onTryNextTrack();
   }
 }
 
@@ -296,8 +215,7 @@ void tickIdleTimeout(unsigned long now) {
 void onTimeout() {
   matrix.sleep();
   enableNfc(false);
-  enablePlayer(false);
-  enableAmplifier(false);
+  player.enable(false);
   
   state = TIMEOUT_WAIT;
 }
@@ -313,6 +231,7 @@ void trellisIsr() {
 
 void onSleepWake() {
   matrix.wakeup();
+  // ignore wakeup key
   matrix.waitForNoKeyPressed();
   onEnterIdle(0);
 }
@@ -334,7 +253,7 @@ void tickReadKeys(unsigned long now) {
   if (state == PLAY_SELECTED) {
     int encoderChange = encoder.getValue() * VOLUME_DIRECTION;
     if (encoderChange != 0) {
-      changeVolume(encoderChange);
+      player.changeVolume(encoderChange);
     }
   }
 
@@ -353,7 +272,7 @@ void tickReadKeys(unsigned long now) {
       case PLAY_PAUSED:
         Serial.print(F("Stopped #")); Serial.println(playingAlbum);
         blinkLED(RED_LED_PIN);
-        stopPlaying();
+        player.stopPlaying();
         onStopPlaying();
       break;
 
@@ -369,18 +288,8 @@ void tickReadKeys(unsigned long now) {
     consumedHeld = false;
   }
 
-  // Read headphone level
-  int audioLevel = analogRead(HEADPHONE_LEVEL_PIN);
-  if (headphone != headphoneFirstMeasure && (audioLevel > HEADPHONE_THRESHOLD) != headphoneFirstMeasure) {
-    // confirmed change
-    onHeadphoneInserted(audioLevel < HEADPHONE_THRESHOLD);
-    Serial.print(F("Confirmed change, headphone ")); Serial.println(headphoneFirstMeasure);
-  } else if ((audioLevel < HEADPHONE_THRESHOLD) != headphoneFirstMeasure) {
-    // there seems to be a change
-    headphoneFirstMeasure = (audioLevel < HEADPHONE_THRESHOLD);
-    Serial.print(F("Possible change, headphone ")); Serial.println(headphoneFirstMeasure);
-  }
-
+  player.checkHeadphoneLevel();
+  
   nextReadTick = now + READ_DELAY;
 }
 
@@ -416,18 +325,25 @@ void onKey(byte index) {
   } else if (state == PLAY_SELECTED && playingAlbum == index) {
     nextTimeoutTick = 0; // no timeout during playing
     nextNfcTick = 0; // no nfc reading during playing
-    stopPlaying();
+    player.stopPlaying();
     onTryNextTrack();
 
   // Some (other) key pressed
   } else {
-    if (state == PLAY_SELECTED) stopPlaying();
+    if (state == PLAY_SELECTED) player.stopPlaying();
+	  matrix.blink(index, true);
     nextTimeoutTick = 0; // no timeout during playing
     nextNfcTick = 0; // no nfc reading during playing
     enableNfc(false);
-    enablePlayer(true);
-    onStartFirstTrack(index);
-    enableAmplifier(!headphone);
+	  player.enable(true);
+	  if (player.startFirstTrack(index)) {
+      state = PLAY_SELECTED;
+	    playingAlbum = index;
+      Serial.print(F("Playing album #")); Serial.println(playingAlbum);
+    } else {
+      Serial.print(F("Failed album #")); Serial.println(playingAlbum);
+      onStopPlaying();
+    }
   }
 }
 
@@ -460,27 +376,12 @@ void onNfcPlay(String trackName) {
   nextTimeoutTick = 0; // no timeout during playing
   nextNfcTick = 0; // no nfc reading during playing
   enableNfc(false);
-  enablePlayer(true);
+  player.enable(true);
   player.startPlayingFile(trackName.c_str());
-  enableAmplifier(!headphone);
-}
-
-void onStartFirstTrack(byte index) {
-  playingAlbum = index;
-  matrix.blink(playingAlbum, true);
-  openNewAlbum(playingAlbum);
-  if (playNextTrack()) {
-    Serial.print(F("Playing album #")); Serial.println(playingAlbum);
-    state = PLAY_SELECTED;
-  } else {
-    Serial.print(F("Failed album #")); Serial.println(playingAlbum);
-    onStopPlaying();
-  }
 }
 
 void onTryNextTrack() {
-  if (playNextTrack()) {
-    Serial.print(F("Playing next track album #")); Serial.println(playingAlbum);
+  if (player.playNextTrack()) {
     matrix.blink(playingAlbum, true);
     state = PLAY_SELECTED;
   } else {
@@ -494,13 +395,11 @@ void onPause(bool pause) {
     Serial.println(F("Pause"));
     matrix.blink(playingAlbum, false);
     player.pausePlaying(true);
-    enableAmplifier(false);
     nextTimeoutTick = millis() + PAUSE_TIMEOUT;
     state = PLAY_PAUSED;
   } else {
     Serial.println(F("Resume"));
     matrix.blink(playingAlbum, true);
-    enableAmplifier(!headphone);
     player.pausePlaying(false);
     nextTimeoutTick = 0; // no timeout during playing
     state = PLAY_SELECTED;
@@ -508,87 +407,11 @@ void onPause(bool pause) {
 }
 
 void onStopPlaying() {
-  enableAmplifier(false);
-  enablePlayer(false);
-  if (album && album.isDirectory()) album.close();
+  player.enable(false);
   onEnterIdle(1200);
 }
 
-void onHeadphoneInserted(boolean plugged) {
-  headphone = plugged;
-  if (plugged) {
-    volume = volume + HEADPHONE_VOLUME_MAX - SPEAKER_VOLUME_MAX;
-  } else {
-    volume = volume + SPEAKER_VOLUME_MAX - HEADPHONE_VOLUME_MAX;
-  }
-  enableAmplifier(!headphone);
-  Serial.print(F("Set Volume ")); Serial.println(volume);
-  player.setVolume(volume, volume);
-}
-
-// Set volume for left, right channels. lower numbers == louder volume!
-//   0: max volume
-//  20: cracks on amplified loudspeaker
-// 130: audible
-// 254: min volume
-// 255: analog off
-void changeVolume(int encoderChange) {
-  volume += encoderChange;
-  if (headphone) {
-    volume = max(HEADPHONE_VOLUME_MAX, min(volume, HEADPHONE_VOLUME_MIN));
-  } else {
-    volume = max(SPEAKER_VOLUME_MAX, min(volume, SPEAKER_VOLUME_MIN));
-  }
-  Serial.print(F("Set Volume ")); Serial.println(volume);
-  player.setVolume(volume, volume);
-}
-
-boolean openNewAlbum(byte index) {
-  int albumNr = index + 1;
-  String albumTemplate = F("ALBUM");
-  String albumName = albumTemplate + albumNr;
-  if (album && album.isDirectory()) album.close();
-  album = SD.open(albumName);
-}
-
-boolean playNextTrack() {
-  if (!album || !album.isDirectory()) return false;
-  File track = album.openNextFile();
-  if (!track) return false;
-
-  String albumName = album.name();
-  String dirPath = albumName + '/';
-  String filePath = dirPath + track.name();
-  Serial.print(F("Next track: ")); Serial.println(filePath);
-  track.close();
-
-  player.startPlayingFile(filePath.c_str());
-  return true;
-}
-
-void stopPlaying() {
-  player.stopPlaying();
-  delay(20);
-}
-
-void enablePlayer(boolean enable) {
-  pinMode(MUSIC_RESET_PIN, OUTPUT);
-  if (enable) {
-    digitalWrite(MUSIC_RESET_PIN, HIGH);
-    player.reset();
-    player.setVolume(volume, volume);
-  } else {
-    player.setVolume(VOLUME_OFF, VOLUME_OFF);
-    digitalWrite(MUSIC_RESET_PIN, LOW);
-  }
-}
-
-void enableAmplifier(boolean enable) {
-  pinMode(AMPLIFIER_ENABLE_PIN, OUTPUT);
-  digitalWrite(AMPLIFIER_ENABLE_PIN, enable);
-}
-
-void enableNfc(boolean enable) {
+void enableNfc(bool enable) {
   pinMode(NFC_RESET_PIN, OUTPUT);
   if (enable) {
     Serial.println("Enable NFC");
@@ -599,5 +422,4 @@ void enableNfc(boolean enable) {
     digitalWrite(NFC_RESET_PIN, LOW);    
   }
 }
-
 
