@@ -272,7 +272,7 @@ void tickReadKeys(unsigned long now) {
       case PLAY_PAUSED:
         Serial.print(F("Stopped #")); Serial.println(playingAlbum);
         blinkLED(RED_LED_PIN);
-        player.stopPlaying();
+        player.stop();
         onStopPlaying();
       break;
 
@@ -325,12 +325,12 @@ void onKey(byte index) {
   } else if (state == PLAY_SELECTED && playingAlbum == index) {
     nextTimeoutTick = 0; // no timeout during playing
     nextNfcTick = 0; // no nfc reading during playing
-    player.stopPlaying();
+    player.stop();
     onTryNextTrack();
 
   // Some (other) key pressed
   } else {
-    if (state == PLAY_SELECTED) player.stopPlaying();
+    if (state == PLAY_SELECTED) player.stop();
 	  matrix.blink(index, true);
     nextTimeoutTick = 0; // no timeout during playing
     nextNfcTick = 0; // no nfc reading during playing
@@ -377,11 +377,11 @@ void onNfcPlay(String trackName) {
   nextNfcTick = 0; // no nfc reading during playing
   enableNfc(false);
   player.enable(true);
-  player.startPlayingFile(trackName.c_str());
+  player.startFile(trackName.c_str());
 }
 
 void onTryNextTrack() {
-  if (player.playNextTrack()) {
+  if (player.nextTrack()) {
     matrix.blink(playingAlbum, true);
     state = PLAY_SELECTED;
   } else {
@@ -394,13 +394,13 @@ void onPause(bool pause) {
   if (pause) {
     Serial.println(F("Pause"));
     matrix.blink(playingAlbum, false);
-    player.pausePlaying(true);
+    player.pause(true);
     nextTimeoutTick = millis() + PAUSE_TIMEOUT;
     state = PLAY_PAUSED;
   } else {
     Serial.println(F("Resume"));
     matrix.blink(playingAlbum, true);
-    player.pausePlaying(false);
+    player.pause(false);
     nextTimeoutTick = 0; // no timeout during playing
     state = PLAY_SELECTED;
   }

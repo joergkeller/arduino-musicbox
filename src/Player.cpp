@@ -150,15 +150,15 @@ bool Player::startFirstTrack(byte albumIndex) {
   String albumTemplate = F("ALBUM");
   String albumName = albumTemplate + albumNr;
   album = SD.open(albumName);
-  return playNextTrack();
+  return nextTrack();
 }
 
-bool Player::startPlayingFile(char* trackName) {
+bool Player::startFile(char* trackName) {
   if (album && album.isDirectory()) { album.close(); }
   return player.startPlayingFile(trackName);
 }
 
-bool Player::playNextTrack() {
+bool Player::nextTrack() {
   if (!album || !album.isDirectory()) return false;
   File track = album.openNextFile();
   if (!track) return false;
@@ -173,12 +173,12 @@ bool Player::playNextTrack() {
   return true;
 }
 
-void Player::pausePlaying(bool pause) {
+void Player::pause(bool pause) {
   player.pausePlaying(pause);
   enableAmplifier(!pause && !headphone);
 }
 
-void Player::stopPlaying() {
+void Player::stop() {
   player.stopPlaying();
   delay(20);
 }

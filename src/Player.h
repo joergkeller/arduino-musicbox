@@ -45,10 +45,10 @@ class Player {
     void checkHeadphoneLevel();
   
     bool startFirstTrack(byte albumIndex);
-    bool startPlayingFile(char* trackName);
-    bool playNextTrack();
-    void pausePlaying(bool pause);
-    void stopPlaying();
+    bool startFile(char* trackName);
+    bool nextTrack();
+    void pause(bool pause);
+    void stop();
     bool hasStopped();
 	
   private:
