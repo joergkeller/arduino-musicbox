@@ -135,7 +135,7 @@ void onEnterIdle(unsigned int delay) {
   state = IDLE;
   matrix.idle();
   enableNfc(true);
-  
+
   nextReadTick = millis() + 1;
   nextNfcTick = millis() + 1;
   nextIdleTick = millis() + 1 + delay;

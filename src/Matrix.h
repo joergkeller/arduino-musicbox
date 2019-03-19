@@ -10,14 +10,21 @@
 
 #include <Arduino.h>
 #include <Adafruit_Trellis.h>
-#include "ShowAbstract.h"
-#include "ShowAlwaysOn.h"
-#include "ShowRunning.h"
-#include "ShowPulsing.h"
-#include "ShowAlternating.h"
+//#include "ShowAbstract.h"
+//#include "ShowAlwaysOn.h"
+//#include "ShowRunning.h"
+//#include "ShowPulsing.h"
+//#include "ShowAlternating.h"
+
+// Trellis LED brightness 1..15
+#define BRIGHTNESS_IDLE   15
+
+// Trellis setup
+#define NUMKEYS   16
+
 
 // Define the idle mode (ShowAlwaysOn, ShowRunning, ShowPulsing, ShowAlternating)
-#define SHOW_CLASS   ShowAlternating
+//#define SHOW_CLASS   ShowAlwaysOn
 
 // Trellis LED brightness 1..15
 #define BRIGHTNESS_PLAYING   15
@@ -45,7 +52,7 @@ class Matrix {
 
   private:
     const Adafruit_Trellis trellis = Adafruit_Trellis();
-    const ShowAbstract& show = SHOW_CLASS(trellis);
+    //const ShowAbstract& show = SHOW_CLASS();
     bool isIdle = false;
 };
 
