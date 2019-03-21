@@ -26,19 +26,13 @@ void Matrix::initialize() {
 
 void Matrix::tickMs() {
   if (isIdle) {
-    //show.tickMs();
+    show.tickMs();
   }
 }
 
 void Matrix::idle() {
   isIdle = true;
-  //show.initialize();
-  trellis.setBrightness(BRIGHTNESS_IDLE);
-  trellis.blinkRate(HT16K33_BLINK_OFF);
-  for (byte i = 0; i < NUMKEYS; i++) {
-    trellis.setLED(i);
-  }
-  trellis.writeDisplay();
+  show.initialize();
 }
 
 void Matrix::blink(byte index, bool fast) {

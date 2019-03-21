@@ -8,19 +8,18 @@
 
 #include "ShowRunning.h"
 
-ShowRunning::ShowRunning(const Adafruit_Trellis& t) {
-  trellis = &t;
-}
+ShowRunning::ShowRunning(const Adafruit_Trellis& t) 
+: trellis(t) {}
 
 void ShowRunning::initialize() {  
   state = IDLE_LIGHT_UP;
   nextLED = 0;
   ticks = 0L;
   
-  trellis->setBrightness(BRIGHTNESS_IDLE);
-  trellis->blinkRate(HT16K33_BLINK_OFF);
-  trellis->clear();
-  trellis->writeDisplay();
+  trellis.setBrightness(BRIGHTNESS_IDLE);
+  trellis.blinkRate(HT16K33_BLINK_OFF);
+  trellis.clear();
+  trellis.writeDisplay();
 }
 
 void ShowRunning::tickMs() {
@@ -41,8 +40,8 @@ void ShowRunning::tickMs() {
 }
 
 void ShowRunning::onIdleLightUp() {
-  trellis->setLED(nextLED);
-  trellis->writeDisplay();
+  trellis.setLED(nextLED);
+  trellis.writeDisplay();
   nextLED = (nextLED + 1) % NUMKEYS;
   if (nextLED == 0) {
     state = IDLE_WAIT_ON;
@@ -54,8 +53,8 @@ void ShowRunning::onIdleWaitOn() {
 }
 
 void ShowRunning::onIdleTurnOff() {
-  trellis->clrLED(nextLED);
-  trellis->writeDisplay();
+  trellis.clrLED(nextLED);
+  trellis.writeDisplay();
   nextLED = (nextLED + 1) % NUMKEYS;
   if (nextLED == 0) {
     state = IDLE_WAIT_OFF;
@@ -63,8 +62,7 @@ void ShowRunning::onIdleTurnOff() {
 }
 
 void ShowRunning::onIdleWaitOff() {
-  trellis->clear(); // just to clean up
-  trellis->writeDisplay();
+  trellis.clear(); // just to clean up
+  trellis.writeDisplay();
   state = IDLE_LIGHT_UP;
 }
-

@@ -26,7 +26,7 @@ class ShowAlwaysOn : public ShowAbstract {
     virtual void tickMs() {}
 
   private:
-    const Adafruit_Trellis* trellis;
+    const Adafruit_Trellis& trellis;
 };
 
 #endif

@@ -29,12 +29,12 @@
 
 class ShowPulsing : public ShowAbstract {
   public:
-    ShowPulsing(const Adafruit_Trellis& trellis);
+    ShowPulsing(const Adafruit_Trellis& t);
     virtual void initialize();
     virtual void tickMs();
 
   private:
-    const Adafruit_Trellis* trellis;
+    const Adafruit_Trellis& trellis;
     byte state;
     byte brightness;
     unsigned long ticks;

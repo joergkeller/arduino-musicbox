@@ -29,12 +29,12 @@
 
 class ShowAlternating : public ShowAbstract {
   public:
-    ShowAlternating(const Adafruit_Trellis& trellis);
+    ShowAlternating(const Adafruit_Trellis& t);
     virtual void initialize();
     virtual void tickMs();
 
   private:
-    const Adafruit_Trellis* trellis;
+    const Adafruit_Trellis& trellis;
     byte state;
     byte even;
     byte brightness;

@@ -8,9 +8,8 @@
 
 #include "ShowAlternating.h"
 
-ShowAlternating::ShowAlternating(const Adafruit_Trellis& t) {
-  trellis = &t;
-}
+ShowAlternating::ShowAlternating(const Adafruit_Trellis& t)
+: trellis(t) {}
 
 void ShowAlternating::initialize() {  
   state = IDLE_UP;
@@ -18,8 +17,8 @@ void ShowAlternating::initialize() {
   brightness = BRIGHTNESS_MIN;
   ticks = 0L;
   
-  trellis->setBrightness(brightness);
-  trellis->blinkRate(HT16K33_BLINK_OFF);
+  trellis.setBrightness(brightness);
+  trellis.blinkRate(HT16K33_BLINK_OFF);
   toggleLED();
 }
 
@@ -27,12 +26,12 @@ void ShowAlternating::toggleLED() {
   for (byte i = 0; i < NUMKEYS; i++) {
     bool on = i / 4 % 2 ? even : !even;
     if (i % 2 != on) {
-      trellis->setLED(i);
+      trellis.setLED(i);
     } else {
-      trellis->clrLED(i);
+      trellis.clrLED(i);
     }
   }
-  trellis->writeDisplay();
+  trellis.writeDisplay();
 }
 
 void ShowAlternating::tickMs() {
@@ -50,18 +49,18 @@ void ShowAlternating::tickMs() {
 }
 
 void ShowAlternating::onIdleUp() {
-  trellis->setBrightness(++brightness);
+  trellis.setBrightness(++brightness);
   if (brightness >= BRIGHTNESS_MAX) {
     state = IDLE_DOWN;
   }
 }
 
 void ShowAlternating::onIdleDown() {
-  trellis->setBrightness(--brightness);
+  trellis.setBrightness(--brightness);
   if (brightness <= BRIGHTNESS_MIN) {
     state = IDLE_OFF;
-    trellis->clear();
-    trellis->writeDisplay();
+    trellis.clear();
+    trellis.writeDisplay();
   }
 }
 

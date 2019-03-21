@@ -8,21 +8,20 @@
 
 #include "ShowPulsing.h"
 
-ShowPulsing::ShowPulsing(const Adafruit_Trellis& t) {
-  trellis = &t;
-}
+ShowPulsing::ShowPulsing(const Adafruit_Trellis& t) 
+: trellis(t) {}
 
 void ShowPulsing::initialize() {  
   state = IDLE_UP;
   brightness = BRIGHTNESS_MIN;
   ticks = 0L;
   
-  trellis->setBrightness(brightness);
-  trellis->blinkRate(HT16K33_BLINK_OFF);
+  trellis.setBrightness(brightness);
+  trellis.blinkRate(HT16K33_BLINK_OFF);
   for (byte i = 0; i < NUMKEYS; i++) {
-    trellis->setLED(i);
+    trellis.setLED(i);
   }
-  trellis->writeDisplay();
+  trellis.writeDisplay();
 }
 
 void ShowPulsing::tickMs() {
@@ -37,16 +36,15 @@ void ShowPulsing::tickMs() {
 }
 
 void ShowPulsing::onIdleUp() {
-  trellis->setBrightness(++brightness);
+  trellis.setBrightness(++brightness);
   if (brightness >= BRIGHTNESS_MAX) {
     state = IDLE_DOWN;
   }
 }
 
 void ShowPulsing::onIdleDown() {
-  trellis->setBrightness(--brightness);
+  trellis.setBrightness(--brightness);
   if (brightness <= BRIGHTNESS_MIN) {
     state = IDLE_UP;
   }
 }
-
