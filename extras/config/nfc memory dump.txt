@@ -1,0 +1,299 @@
+Superhelden
+===========
+
+Found an ISO14443A card
+  UID Length: 4 bytes
+  UID Value: 46 C9 93 16 - Lex
+Seems to be a Mifare Classic card (4 byte UID)
+------------------------Sector 0-------------------------
+Block 0   46 C9 93 16 0A 08 04 00 62 63 64 65 66 67 68 69    F.......bcdefghi
+Block 1   01 17 06 18 01 10 01 00 00 00 00 00 00 00 00 00    ................
+Block 2   00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00    ................
+Block 3   00 00 00 00 00 00 FF 07 80 69 FF FF FF FF FF FF    .........i......
+
+Found an ISO14443A card
+  UID Length: 4 bytes
+  UID Value: C8 DC AE 2E - Oli
+Seems to be a Mifare Classic card (4 byte UID)
+------------------------Sector 0-------------------------
+Block 0   C8 DC AE 2E 94 08 04 00 62 63 64 65 66 67 68 69    ........bcdefghi
+Block 1   01 17 06 18 01 10 06 00 00 00 00 00 00 00 00 00    ................
+Block 2   00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00    ................
+Block 3   00 00 00 00 00 00 FF 07 80 69 FF FF FF FF FF FF    .........i......
+
+Found an ISO14443A card
+  UID Length: 4 bytes
+  UID Value: F5 CC 26 20 - Beno
+Seems to be a Mifare Classic card (4 byte UID)
+------------------------Sector 0-------------------------
+Block 0   F5 CC 26 20 3F 08 04 00 62 63 64 65 66 67 68 69    ..& ?...bcdefghi
+Block 1   01 17 06 18 01 10 07 00 00 00 00 00 00 00 00 00    ................
+Block 2   00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00    ................
+Block 3   00 00 00 00 00 00 FF 07 80 69 FF FF FF FF FF FF    .........i......
+
+Found an ISO14443A card
+  UID Length: 4 bytes
+  UID Value: CA 47 AA 33 - Tilla
+Seems to be a Mifare Classic card (4 byte UID)
+------------------------Sector 0-------------------------
+Block 0   CA 47 AA 33 14 08 04 00 62 63 64 65 66 67 68 69    .G.3....bcdefghi
+Block 1   01 17 06 18 01 10 04 00 00 00 00 00 00 00 00 00    ................
+Block 2   00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00    ................
+Block 3   00 00 00 00 00 00 FF 07 80 69 FF FF FF FF FF FF    .........i......
+
+Found an ISO14443A card
+  UID Length: 4 bytes
+  UID Value: D9 0C CF 30 - Fabiella Einhorn
+Seems to be a Mifare Classic card (4 byte UID)
+------------------------Sector 0-------------------------
+Block 0   D9 0C CF 30 2A 08 04 00 62 63 64 65 66 67 68 69    ...0*...bcdefghi
+Block 1   01 17 06 18 01 10 03 00 00 00 00 00 00 00 00 00    ................
+Block 2   00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00    ................
+Block 3   00 00 00 00 00 00 FF 07 80 69 FF FF FF FF FF FF    .........i......
+
+Found an ISO14443A card
+  UID Length: 4 bytes
+  UID Value: AB 9F C9 2A - Lucy Seehund
+Seems to be a Mifare Classic card (4 byte UID)
+------------------------Sector 0-------------------------
+Block 0   AB 9F C9 2A D7 08 04 00 62 63 64 65 66 67 68 69    ...*....bcdefghi
+Block 1   01 17 06 18 01 10 05 00 00 00 00 00 00 00 00 00    ................
+Block 2   00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00    ................
+Block 3   00 00 00 00 00 00 FF 07 80 69 FF FF FF FF FF FF    .........i......
+
+Found an ISO14443A card
+  UID Length: 4 bytes
+  UID Value: 59 2C 63 30 - Niki Dino
+Seems to be a Mifare Classic card (4 byte UID)
+------------------------Sector 0-------------------------
+Block 0   59 2C 63 30 26 08 04 00 62 63 64 65 66 67 68 69    Y,c0&...bcdefghi
+Block 1   01 17 06 18 01 10 10 00 00 00 00 00 00 00 00 00    ................
+Block 2   00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00    ................
+Block 3   00 00 00 00 00 00 FF 07 80 69 FF FF FF FF FF FF    .........i......
+
+Found an ISO14443A card
+  UID Length: 4 bytes
+  UID Value: E5 A6 7A 0F - Lulu Eule
+Seems to be a Mifare Classic card (4 byte UID)
+------------------------Sector 0-------------------------
+Block 0   E5 A6 7A 0F 36 08 04 00 62 63 64 65 66 67 68 69    ..z.6...bcdefghi
+Block 1   02 17 06 18 01 10 12 00 00 00 00 00 00 00 00 00    ................
+Block 2   00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00    ................
+Block 3   00 00 00 00 00 00 FF 07 80 69 FF FF FF FF FF FF    .........i......
+
+Found an ISO14443A card
+  UID Length: 4 bytes
+  UID Value: A8 AD 6C 2E - Timmy Supermaus
+Seems to be a Mifare Classic card (4 byte UID)
+------------------------Sector 0-------------------------
+Block 0   A8 AD 6C 2E 47 08 04 00 62 63 64 65 66 67 68 69    ..l.G...bcdefghi
+Block 1   01 17 06 18 01 10 02 00 00 00 00 00 00 00 00 00    ................
+Block 2   00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00    ................
+Block 3   00 00 00 00 00 00 FF 07 80 69 FF FF FF FF FF FF    .........i......
+
+Found an ISO14443A card
+  UID Length: 4 bytes
+  UID Value: 77 0F D3 07 - Rob
+Seems to be a Mifare Classic card (4 byte UID)
+------------------------Sector 0-------------------------
+Block 0   77 0F D3 07 AC 08 04 00 62 63 64 65 66 67 68 69    w.......bcdefghi
+Block 1   01 17 06 18 01 10 09 00 00 00 00 00 00 00 00 00    ................
+Block 2   00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00    ................
+Block 3   00 00 00 00 00 00 FF 07 80 69 FF FF FF FF FF FF    .........i......
+
+Found an ISO14443A card
+  UID Length: 4 bytes
+  UID Value: 4B 34 98 2A - Vivy Mädchen
+Seems to be a Mifare Classic card (4 byte UID)
+------------------------Sector 0-------------------------
+Block 0   4B 34 98 2A CD 08 04 00 62 63 64 65 66 67 68 69    K4.*....bcdefghi
+Block 1   01 17 06 18 01 10 08 00 00 00 00 00 00 00 00 00    ................
+Block 2   00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00    ................
+Block 3   00 00 00 00 00 00 FF 07 80 69 FF FF FF FF FF FF    .........i......
+
+Found an ISO14443A card
+  UID Length: 4 bytes
+  UID Value: 9A FE C4 33 - Mick
+Seems to be a Mifare Classic card (4 byte UID)
+------------------------Sector 0-------------------------
+Block 0   9A FE C4 33 93 08 04 00 62 63 64 65 66 67 68 69    ...3....bcdefghi
+Block 1   01 17 06 18 01 10 11 00 00 00 00 00 00 00 00 00    ................
+Block 2   00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00    ................
+Block 3   00 00 00 00 00 00 FF 07 80 69 FF FF FF FF FF FF    .........i......
+
+Wichtel
+=======
+
+Found an ISO14443A card
+  UID Length: 4 bytes
+  UID Value: E9 C2 5D 34 - Matus
+Seems to be a Mifare Classic card (4 byte UID)
+------------------------Sector 0-------------------------
+Block 0   E9 C2 5D 34 42 08 04 00 62 63 64 65 66 67 68 69    ..]4B...bcdefghi
+Block 1   01 17 07 20 01 10 18 00 00 00 00 00 00 00 00 00    ... ............
+Block 2   00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00    ................
+Block 3   00 00 00 00 00 00 FF 07 80 69 FF FF FF FF FF FF    .........i......
+
+Found an ISO14443A card
+  UID Length: 4 bytes
+  UID Value: B8 5D 2D 35 - Finn
+Seems to be a Mifare Classic card (4 byte UID)
+------------------------Sector 0-------------------------
+Block 0   B8 5D 2D 35 FD 08 04 00 62 63 64 65 66 67 68 69    .]-5....bcdefghi
+Block 1   01 17 07 20 01 10 13 00 00 00 00 00 00 00 00 00    ... ............
+Block 2   00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00    ................
+Block 3   00 00 00 00 00 00 FF 07 80 69 FF FF FF FF FF FF    .........i......
+
+Found an ISO14443A card
+  UID Length: 4 bytes
+  UID Value: E5 30 10 27 - Nino
+Seems to be a Mifare Classic card (4 byte UID)
+------------------------Sector 0-------------------------
+Block 0   E5 30 10 27 E2 08 04 00 62 63 64 65 66 67 68 69    .0.'....bcdefghi
+Block 1   01 17 07 20 01 10 15 00 00 00 00 00 00 00 00 00    ... ............
+Block 2   00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00    ................
+Block 3   00 00 00 00 00 00 FF 07 80 69 FF FF FF FF FF FF    .........i......
+
+Found an ISO14443A card
+  UID Length: 4 bytes
+  UID Value: C6 EB 6B 1B - Lino
+Seems to be a Mifare Classic card (4 byte UID)
+------------------------Sector 0-------------------------
+Block 0   C6 EB 6B 1B 5D 08 04 00 62 63 64 65 66 67 68 69    ..k.]...bcdefghi
+Block 1   01 17 07 20 01 10 17 00 00 00 00 00 00 00 00 00    ... ............
+Block 2   00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00    ................
+Block 3   00 00 00 00 00 00 FF 07 80 69 FF FF FF FF FF FF    .........i......
+
+Found an ISO14443A card
+  UID Length: 4 bytes
+  UID Value: 67 38 BC 0E - Eli
+Seems to be a Mifare Classic card (4 byte UID)
+------------------------Sector 0-------------------------
+Block 0   67 38 BC 0E ED 08 04 00 62 63 64 65 66 67 68 69    g8......bcdefghi
+Block 1   01 17 07 20 01 10 16 00 00 00 00 00 00 00 00 00    ... ............
+Block 2   00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00    ................
+Block 3   00 00 00 00 00 00 FF 07 80 69 FF FF FF FF FF FF    .........i......
+
+Found an ISO14443A card
+  UID Length: 4 bytes
+  UID Value: 4B E4 F1 30 - Lucy Wichtel
+Seems to be a Mifare Classic card (4 byte UID)
+------------------------Sector 0-------------------------
+Block 0   4B E4 F1 30 6E 08 04 00 62 63 64 65 66 67 68 69    K..0n...bcdefghi
+Block 1   01 17 07 20 01 10 14 00 00 00 00 00 00 00 00 00    ... ............
+Block 2   00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00    ................
+Block 3   00 00 00 00 00 00 FF 07 80 69 FF FF FF FF FF FF    .........i......
+
+Found an ISO14443A card
+  UID Length: 4 bytes
+  UID Value: B4 8C 51 27 - XFinn Weihnachten
+Seems to be a Mifare Classic card (4 byte UID)
+------------------------Sector 0-------------------------
+Block 0   B4 8C 51 27 4E 08 04 00 62 63 64 65 66 67 68 69    ..Q'N...bcdefghi
+Block 1   01 17 07 20 01 10 20 00 00 00 00 00 00 00 00 00    ... .. .........
+Block 2   00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00    ................
+Block 3   00 00 00 00 00 00 FF 07 80 69 FF FF FF FF FF FF    .........i......
+
+Found an ISO14443A card
+  UID Length: 4 bytes
+  UID Value: DA 75 65 37 - Tom
+Seems to be a Mifare Classic card (4 byte UID)
+------------------------Sector 0-------------------------
+Block 0   DA 75 65 37 FD 08 04 00 62 63 64 65 66 67 68 69    .ue7....bcdefghi
+Block 1   01 17 07 20 01 10 19 00 00 00 00 00 00 00 00 00    ... ............
+Block 2   00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00    ................
+Block 3   00 00 00 00 00 00 FF 07 80 69 FF FF FF FF FF FF    .........i......
+
+
+Disney
+======
+
+Found an ISO14443A card
+  UID Length: 4 bytes
+  UID Value: 29 68 81 39 - Balu
+Seems to be a Mifare Classic card (4 byte UID)
+------------------------Sector 0-------------------------
+Block 0   29 68 81 39 F9 08 04 00 62 63 64 65 66 67 68 69    )h.9....bcdefghi
+Block 1   01 18 01 30 01 10 26 00 00 00 00 00 00 00 00 00    ...0..&.........
+Block 2   00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00    ................
+Block 3   00 00 00 00 00 00 FF 07 80 69 FF FF FF FF FF FF    .........i......
+
+Found an ISO14443A card
+  UID Length: 4 bytes
+  UID Value: C5 0C B0 15 - Mickey
+Seems to be a Mifare Classic card (4 byte UID)
+------------------------Sector 0-------------------------
+Block 0   C5 0C B0 15 6C 08 04 00 62 63 64 65 66 67 68 69    ....l...bcdefghi
+Block 1   01 18 01 30 01 10 30 00 00 00 00 00 00 00 00 00    ...0..0.........
+Block 2   00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00    ................
+Block 3   00 00 00 00 00 00 FF 07 80 69 FF FF FF FF FF FF    .........i......
+
+Found an ISO14443A card
+  UID Length: 4 bytes
+  UID Value: 86 6E F7 20 - Simba
+Seems to be a Mifare Classic card (4 byte UID)
+------------------------Sector 0-------------------------
+Block 0   86 6E F7 20 3F 08 04 00 62 63 64 65 66 67 68 69    .n. ?...bcdefghi
+Block 1   01 18 01 30 01 10 25 00 00 00 00 00 00 00 00 00    ...0..%.........
+Block 2   00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00    ................
+Block 3   00 00 00 00 00 00 FF 07 80 69 FF FF FF FF FF FF    .........i......
+
+Found an ISO14443A card
+  UID Length: 4 bytes
+  UID Value: 45 3C DB 2F - Bambi
+Seems to be a Mifare Classic card (4 byte UID)
+------------------------Sector 0-------------------------
+Block 0   45 3C DB 2F 8D 08 04 00 62 63 64 65 66 67 68 69    E<./....bcdefghi
+Block 1   01 18 01 30 01 10 27 00 00 00 00 00 00 00 00 00    ...0..'.........
+Block 2   00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00    ................
+Block 3   00 00 00 00 00 00 FF 07 80 69 FF FF FF FF FF FF    .........i......
+
+Found an ISO14443A card
+  UID Length: 4 bytes
+  UID Value: E5 86 CC 2E - Olaf
+Seems to be a Mifare Classic card (4 byte UID)
+------------------------Sector 0-------------------------
+Block 0   E5 86 CC 2E 81 08 04 00 62 63 64 65 66 67 68 69    ........bcdefghi
+Block 1   01 18 01 30 01 10 23 00 00 00 00 00 00 00 00 00    ...0..#.........
+Block 2   00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00    ................
+Block 3   00 00 00 00 00 00 FF 07 80 69 FF FF FF FF FF FF    .........i......
+
+Found an ISO14443A card
+  UID Length: 4 bytes
+  UID Value: 3B 55 53 35 - Rapunzel
+Seems to be a Mifare Cla3B 55 53 35ssic card (4 byte UID)
+------------------------Sector 0-------------------------
+Block 0   3B 55 53 35 08 08 04 00 62 63 64 65 66 67 68 69    ;US5....bcdefghi
+Block 1   01 18 01 30 01 10 21 00 00 00 00 00 00 00 00 00    ...0..!.........
+Block 2   00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00    ................
+Block 3   00 00 00 00 00 00 FF 07 80 69 FF FF FF FF FF FF    .........i......
+
+Found an ISO14443A card
+  UID Length: 4 bytes
+  UID Value: 97 D6 03 15 - Patch Hund
+Seems to be a Mifare Classic card (4 byte UID)
+------------------------Sector 0-------------------------
+Block 0   97 D6 03 15 57 08 04 00 62 63 64 65 66 67 68 69    ....W...bcdefghi
+Block 1   01 18 01 30 01 10 22 00 00 00 00 00 00 00 00 00    ...0..".........
+Block 2   00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00    ................
+Block 3   00 00 00 00 00 00 FF 07 80 69 FF FF FF FF FF FF    .........i......
+
+Found an ISO14443A card
+  UID Length: 4 bytes
+  UID Value: A8 F1 7B 3A - Arielle Rothaar
+Seems to be a Mifare Classic card (4 byte UID)
+------------------------Sector 0-------------------------
+Block 0   A8 F1 7B 3A 18 08 04 00 62 63 64 65 66 67 68 69    ..{:....bcdefghi
+Block 1   01 18 01 30 01 10 28 00 00 00 00 00 00 00 00 00    ...0..(.........
+Block 2   00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00    ................
+Block 3   00 00 00 00 00 00 FF 07 80 69 FF FF FF FF FF FF    .........i......
+
+Found an ISO14443A card
+  UID Length: 4 bytes
+  UID Value: 55 A7 42 2F - Belle Braunhaar
+Seems to be a Mifare Classic card (4 byte UID)
+------------------------Sector 0-------------------------
+Block 0   55 A7 42 2F 9F 08 04 00 62 63 64 65 66 67 68 69    U.B/....bcdefghi
+Block 1   01 18 01 30 01 10 29 00 00 00 00 00 00 00 00 00    ...0..).........
+Block 2   00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00    ................
+Block 3   00 00 00 00 00 00 FF 07 80 69 FF FF FF FF FF FF    .........i......
