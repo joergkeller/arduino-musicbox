@@ -16,3 +16,6 @@
 [submodule "libraries/TimerOne"]
 	path = libraries/TimerOne
 	url = https://github.com/devalfrz/TimerOne.git
+[submodule "libraries/Adafruit_Seesaw"]
+	path = libraries/Adafruit_Seesaw
+	url = https://github.com/adafruit/Adafruit_Seesaw.git
