@@ -33,12 +33,12 @@
 
 class ShowRunning : public ShowAbstract {
   public:
-    ShowRunning(const Adafruit_Trellis& t);
+    ShowRunning(Adafruit_Trellis& t);
     virtual void initialize();
     virtual void tickMs();
 
   private:
-    const Adafruit_Trellis& trellis;
+    Adafruit_Trellis& trellis;
     byte state;
     byte nextLED;
     unsigned long ticks;

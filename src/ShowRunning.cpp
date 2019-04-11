@@ -8,7 +8,7 @@
 
 #include "ShowRunning.h"
 
-ShowRunning::ShowRunning(const Adafruit_Trellis& t) 
+ShowRunning::ShowRunning(Adafruit_Trellis& t) 
 : trellis(t) {}
 
 void ShowRunning::initialize() {  

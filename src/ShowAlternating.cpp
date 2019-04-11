@@ -8,7 +8,7 @@
 
 #include "ShowAlternating.h"
 
-ShowAlternating::ShowAlternating(const Adafruit_Trellis& t)
+ShowAlternating::ShowAlternating(Adafruit_Trellis& t)
 : trellis(t) {}
 
 void ShowAlternating::initialize() {  

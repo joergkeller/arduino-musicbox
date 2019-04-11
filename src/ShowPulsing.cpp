@@ -8,7 +8,7 @@
 
 #include "ShowPulsing.h"
 
-ShowPulsing::ShowPulsing(const Adafruit_Trellis& t) 
+ShowPulsing::ShowPulsing(Adafruit_Trellis& t) 
 : trellis(t) {}
 
 void ShowPulsing::initialize() {  

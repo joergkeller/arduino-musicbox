@@ -202,7 +202,11 @@ void tickIdleTimeout(unsigned long now) {
   onTimeout();
 
   matrix.enableInterrupt(trellisIsr);
-  LowPower.powerDown(SLEEP_8S, ADC_OFF, BOD_OFF); 
+  #if defined (__AVR__)
+    LowPower.powerDown(SLEEP_8S, ADC_OFF, BOD_OFF); 
+  #else
+    LowPower.standby();
+  #endif
 
   if (state == TIMEOUT_WAIT) {
     // temporary wakeup after 8s, no interrupt called
@@ -377,7 +381,7 @@ void onNfcPlay(String trackName) {
   nextNfcTick = 0; // no nfc reading during playing
   enableNfc(false);
   player.enable(true);
-  player.startFile(trackName.c_str());
+  player.startFile((char*)trackName.c_str());
 }
 
 void onTryNextTrack() {

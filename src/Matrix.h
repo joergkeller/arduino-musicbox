@@ -25,7 +25,10 @@
 // Trellis setup
 #define TRELLIS_INT_PIN    1
 
-
+/*
+ * Provides access to a trellis 4x4 board with LED output and key input.
+ * The LED can be switched on/off, have a level of brightness and can blink in two frequencies. Keys can be polled.
+ */
 class Matrix {
   public:
     Matrix();
@@ -44,8 +47,8 @@ class Matrix {
     void disableInterrupt();
 
   private:
-    const Adafruit_Trellis trellis = Adafruit_Trellis();
-    const SHOW_CLASS show = SHOW_CLASS(trellis);
+    Adafruit_Trellis trellis = Adafruit_Trellis();
+    SHOW_CLASS show = SHOW_CLASS(trellis);
     bool isIdle = false;
 };
 

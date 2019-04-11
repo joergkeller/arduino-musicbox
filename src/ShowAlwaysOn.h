@@ -21,12 +21,12 @@
 
 class ShowAlwaysOn : public ShowAbstract {
   public:
-    ShowAlwaysOn(const Adafruit_Trellis& t);
+    ShowAlwaysOn(Adafruit_Trellis& t);
     virtual void initialize();
     virtual void tickMs() {}
 
   private:
-    const Adafruit_Trellis& trellis;
+    Adafruit_Trellis& trellis;
 };
 
 #endif

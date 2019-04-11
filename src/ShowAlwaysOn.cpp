@@ -8,7 +8,7 @@
 
 #include "ShowAlwaysOn.h"
 
-ShowAlwaysOn::ShowAlwaysOn(const Adafruit_Trellis& t) 
+ShowAlwaysOn::ShowAlwaysOn(Adafruit_Trellis& t) 
 : trellis(t) {}
 
 void ShowAlwaysOn::initialize() {  
