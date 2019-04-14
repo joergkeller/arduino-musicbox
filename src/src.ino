@@ -23,13 +23,12 @@
 #include <Wire.h>
 #include <SPI.h>
 #include <SD.h>
-#include <ClickEncoder.h>
-#include <TimerOne.h>
 #include <LowPower.h>
 #include <PN532_I2C.h>
 #include <PN532.h>
 #include <NfcAdapter.h>
 #include <Properties.h>
+#include "Command.h"
 #include "Matrix.h"
 #include "Player.h"
 
@@ -41,15 +40,6 @@
 #define IDLE_TIMEOUT  (1000L * 60L * 15L)
 #define PAUSE_TIMEOUT (1000L * 60L * 60L)
 #define ROLLOVER_GAP  (1000L * 60L * 60L)
-
-// Rotary Encoder with Switch and LED
-#define ENCODER_A_PIN       A0
-#define ENCODER_B_PIN       A1
-#define ENCODER_SWITCH_PIN   0
-#define RED_LED_PIN         A3
-#define GREEN_LED_PIN       A4
-#define BLUE_LED_PIN        A5
-#define VOLUME_DIRECTION    -3    // set direction of encoder-volume
 
 // NFC pin setup
 #define NFC_RESET_PIN   13    // PN532 reset pin
@@ -66,46 +56,39 @@
 /***************************************************
    Variables
  ****************************************************/
+Command command = Command();
 Matrix matrix = Matrix();
 Player player = Player();
-ClickEncoder encoder = ClickEncoder(ENCODER_A_PIN, ENCODER_B_PIN, ENCODER_SWITCH_PIN, 2, LOW, HIGH);
 PN532_I2C pn532i2c(Wire);
 PN532 nfc(pn532i2c);
 
 
+unsigned long tickMs = 0;
 unsigned long nextReadTick = millis() + 1;
 unsigned long nextNfcTick = millis() + 1;
 unsigned long nextIdleTick = millis() + 1;
 unsigned long nextTimeoutTick = 0;
 byte state = IDLE;
 byte playingAlbum;
-bool tickMs = false;
 
 
 /***************************************************
    Setup
  ****************************************************/
 void setup() {
-  Serial.begin(14400);
+  Serial.begin(19200);
   while (!Serial && millis() < nextIdleTick + 75);
   Serial.println(F("MusicBox setup"));
 
+  command.initialize();
   matrix.initialize();
   player.initialize();
-  initializeSwitchLed();                    
   initializeNfc();
-  initializeTimer();
 
+  command.attachRotary(onRotaryChange);
+  command.attachClick(onClick);
+  command.attachLongClick(onLongClick);
   onEnterIdle(0);
-}
-
-void initializeSwitchLed() {
-  pinMode(RED_LED_PIN, OUTPUT);
-  pinMode(GREEN_LED_PIN, OUTPUT);
-  pinMode(BLUE_LED_PIN, OUTPUT);
-  digitalWrite(RED_LED_PIN, HIGH);   // LED off
-  digitalWrite(GREEN_LED_PIN, HIGH); // LED off
-  digitalWrite(BLUE_LED_PIN, HIGH);  // LED off
 }
 
 void initializeNfc() {
@@ -125,12 +108,6 @@ void initializeNfc() {
   Serial.println(F("PN532 initialized"));
 }
 
-void initializeTimer() {
-  Timer1.initialize(1000);
-  Timer1.attachInterrupt(timerIsr);
-  Serial.println(F("Timer initialized"));
-}
-
 void onEnterIdle(unsigned int delay) {
   state = IDLE;
   matrix.idle();
@@ -146,9 +123,35 @@ void onEnterIdle(unsigned int delay) {
 /***************************************************
    Interrupt-Handler
  ****************************************************/
-void timerIsr() {
-  encoder.service();
-  tickMs = true;
+void onRotaryChange(int delta) {
+  player.changeVolume(delta);
+}
+
+void onClick() {
+  switch (state) {
+    case PLAY_SELECTED: onPause(true); break;
+    case PLAY_PAUSED:   onPause(false); break;
+  }
+}
+
+void onLongClick() {
+  switch (state) {
+    case PLAY_SELECTED:
+    case PLAY_PAUSED:
+      Serial.print(F("Stopped #")); Serial.println(playingAlbum);
+      command.blink(COLOR_RED);
+      player.stop();
+      onStopPlaying();
+    break;
+
+    case IDLE:
+      Serial.println(F("Force timeout"));
+      command.blink(COLOR_GREEN);
+      delay(300);
+      command.blink(COLOR_RED);
+      nextTimeoutTick = millis();
+    break;
+  }
 }
 
 /***************************************************
@@ -178,9 +181,12 @@ void loop() {
   if (0 < nextIdleTick && nextIdleTick <= now) {
     tickIdleShow(now);
   }
-  if (tickMs) {
+
+  if (now != tickMs) {
+    command.tickMs();
     matrix.tickMs();
-    tickMs = false;
+    player.checkHeadphoneLevel();
+    tickMs = now;
   }
 
   // Check for finished track
@@ -192,7 +198,7 @@ void loop() {
 void tickIdleShow(unsigned long now) {
   // Blink in pause mode
   if (state == PLAY_PAUSED) {
-    blinkLED(BLUE_LED_PIN);
+    command.blink(COLOR_BLUE);
     nextIdleTick = now + PAUSE_DELAY;
   }
 }
@@ -225,7 +231,7 @@ void onTimeout() {
 }
 
 void onWatchdogPing() {
-  blinkLED(BLUE_LED_PIN);
+  command.blink(COLOR_BLUE);
 }
 
 void trellisIsr() {
@@ -240,12 +246,6 @@ void onSleepWake() {
   onEnterIdle(0);
 }
 
-void blinkLED(int pin) {
-  digitalWrite(pin, LOW); // LED on
-  delay(1);
-  digitalWrite(pin, HIGH); // LED off
-}
-
 void tickReadKeys(unsigned long now) {
   // Read trellis keys
   int index = matrix.getPressedKey();
@@ -253,47 +253,6 @@ void tickReadKeys(unsigned long now) {
     onKey(index);
   }
 
-  // Read encoder position
-  if (state == PLAY_SELECTED) {
-    int encoderChange = encoder.getValue() * VOLUME_DIRECTION;
-    if (encoderChange != 0) {
-      player.changeVolume(encoderChange);
-    }
-  }
-
-  // Read encoder switch
-  static bool consumedHeld = false;
-  ClickEncoder::Button button = encoder.getButton();
-  if (button == ClickEncoder::Clicked) {
-    switch (state) {
-      case PLAY_SELECTED: onPause(true); break;
-      case PLAY_PAUSED:   onPause(false); break;
-    }
-  } else if (button == ClickEncoder::Held && !consumedHeld) {
-    consumedHeld = true;
-    switch (state) {
-      case PLAY_SELECTED:
-      case PLAY_PAUSED:
-        Serial.print(F("Stopped #")); Serial.println(playingAlbum);
-        blinkLED(RED_LED_PIN);
-        player.stop();
-        onStopPlaying();
-      break;
-
-      case IDLE:
-        Serial.println(F("Force timeout"));
-        blinkLED(GREEN_LED_PIN);
-        delay(300);
-        blinkLED(RED_LED_PIN);
-        nextTimeoutTick = millis();
-      break;
-    }
-  } else if (button == ClickEncoder::Released) {
-    consumedHeld = false;
-  }
-
-  player.checkHeadphoneLevel();
-  
   nextReadTick = now + READ_DELAY;
 }
 
@@ -426,4 +385,3 @@ void enableNfc(bool enable) {
     digitalWrite(NFC_RESET_PIN, LOW);    
   }
 }
-

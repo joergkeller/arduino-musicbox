@@ -19,3 +19,9 @@
 [submodule "libraries/Adafruit_Seesaw"]
 	path = libraries/Adafruit_Seesaw
 	url = https://github.com/adafruit/Adafruit_Seesaw.git
+[submodule "libraries/RotaryEncoder"]
+	path = libraries/RotaryEncoder
+	url = https://github.com/mathertel/RotaryEncoder.git
+[submodule "libraries/OneButton"]
+	path = libraries/OneButton
+	url = https://github.com/mathertel/OneButton.git
