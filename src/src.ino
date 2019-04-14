@@ -121,7 +121,7 @@ void onEnterIdle(unsigned int delay) {
 
 
 /***************************************************
-   Interrupt-Handler
+   External event handler
  ****************************************************/
 void onRotaryChange(int delta) {
   player.changeVolume(delta);
