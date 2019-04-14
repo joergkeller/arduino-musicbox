@@ -8,20 +8,14 @@
 
 #include "ShowPulsing.h"
 
-ShowPulsing::ShowPulsing(Adafruit_Trellis& t) 
+ShowPulsing::ShowPulsing(Adafruit_NeoTrellis& t) 
 : trellis(t) {}
 
 void ShowPulsing::initialize() {  
   state = IDLE_UP;
   brightness = BRIGHTNESS_MIN;
   ticks = 0L;
-  
-  trellis.setBrightness(brightness);
-  trellis.blinkRate(HT16K33_BLINK_OFF);
-  for (byte i = 0; i < NUMKEYS; i++) {
-    trellis.setLED(i);
-  }
-  trellis.writeDisplay();
+  showWheel();
 }
 
 void ShowPulsing::tickMs() {
@@ -35,15 +29,24 @@ void ShowPulsing::tickMs() {
   }
 }
 
+void ShowPulsing::showWheel() {
+  for (byte i = 0; i < NUMKEYS; i++) {
+    trellis.pixels.setPixelColor(i, wheel(i, brightness));
+  }
+  trellis.pixels.show();
+}
+
 void ShowPulsing::onIdleUp() {
-  trellis.setBrightness(++brightness);
+  ++brightness;
+  showWheel();
   if (brightness >= BRIGHTNESS_MAX) {
     state = IDLE_DOWN;
   }
 }
 
 void ShowPulsing::onIdleDown() {
-  trellis.setBrightness(--brightness);
+  --brightness;
+  showWheel();
   if (brightness <= BRIGHTNESS_MIN) {
     state = IDLE_UP;
   }

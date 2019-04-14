@@ -9,24 +9,21 @@
 #define ShowAlwaysOn_h
 
 #include <Arduino.h>
-#include <Adafruit_Trellis.h>
+#include <Adafruit_NeoTrellis.h>
 #include "ShowAbstract.h"
 
 // Trellis LED brightness 1..15
 #define BRIGHTNESS_IDLE   15
 
-// Trellis setup
-#define NUMKEYS   16
-
 
 class ShowAlwaysOn : public ShowAbstract {
   public:
-    ShowAlwaysOn(Adafruit_Trellis& t);
+    ShowAlwaysOn(Adafruit_NeoTrellis& t);
     virtual void initialize();
     virtual void tickMs() {}
 
   private:
-    Adafruit_Trellis& trellis;
+    Adafruit_NeoTrellis& trellis;
 };
 
 #endif

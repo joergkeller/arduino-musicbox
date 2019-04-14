@@ -9,18 +9,15 @@
 #define ShowAlternating_h
 
 #include <Arduino.h>
-#include <Adafruit_Trellis.h>
+#include <Adafruit_NeoTrellis.h>
 #include "ShowAbstract.h"
 
 // Delays [ms]
-#define STEP_DELAY   300
+#define STEP_DELAY   30
 
-// Trellis LED brightness 1..15
+// Trellis LED brightness 0..255
 #define BRIGHTNESS_MIN    0
-#define BRIGHTNESS_MAX   15
-
-// Trellis setup
-#define NUMKEYS   16
+#define BRIGHTNESS_MAX   96
 
 // States
 #define IDLE_UP      1
@@ -29,12 +26,12 @@
 
 class ShowAlternating : public ShowAbstract {
   public:
-    ShowAlternating(Adafruit_Trellis& t);
+    ShowAlternating(Adafruit_NeoTrellis& t);
     virtual void initialize();
     virtual void tickMs();
 
   private:
-    Adafruit_Trellis& trellis;
+    Adafruit_NeoTrellis& trellis;
     byte state;
     byte even;
     byte brightness;

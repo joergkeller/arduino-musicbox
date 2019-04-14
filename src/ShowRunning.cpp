@@ -8,7 +8,7 @@
 
 #include "ShowRunning.h"
 
-ShowRunning::ShowRunning(Adafruit_Trellis& t) 
+ShowRunning::ShowRunning(Adafruit_NeoTrellis& t) 
 : trellis(t) {}
 
 void ShowRunning::initialize() {  
@@ -16,10 +16,10 @@ void ShowRunning::initialize() {
   nextLED = 0;
   ticks = 0L;
   
-  trellis.setBrightness(BRIGHTNESS_IDLE);
-  trellis.blinkRate(HT16K33_BLINK_OFF);
-  trellis.clear();
-  trellis.writeDisplay();
+  trellis.pixels.setBrightness(BRIGHTNESS_IDLE);
+  //trellis.blinkRate(HT16K33_BLINK_OFF);
+  trellis.pixels.clear();
+  trellis.pixels.show();
 }
 
 void ShowRunning::tickMs() {
@@ -40,8 +40,8 @@ void ShowRunning::tickMs() {
 }
 
 void ShowRunning::onIdleLightUp() {
-  trellis.setLED(nextLED);
-  trellis.writeDisplay();
+  trellis.pixels.setPixelColor(nextLED, wheel(nextLED));
+  trellis.pixels.show();
   nextLED = (nextLED + 1) % NUMKEYS;
   if (nextLED == 0) {
     state = IDLE_WAIT_ON;
@@ -53,8 +53,8 @@ void ShowRunning::onIdleWaitOn() {
 }
 
 void ShowRunning::onIdleTurnOff() {
-  trellis.clrLED(nextLED);
-  trellis.writeDisplay();
+  trellis.pixels.setPixelColor(nextLED, 0);
+  trellis.pixels.show();
   nextLED = (nextLED + 1) % NUMKEYS;
   if (nextLED == 0) {
     state = IDLE_WAIT_OFF;
@@ -62,7 +62,7 @@ void ShowRunning::onIdleTurnOff() {
 }
 
 void ShowRunning::onIdleWaitOff() {
-  trellis.clear(); // just to clean up
-  trellis.writeDisplay();
+  trellis.pixels.clear(); // just to clean up
+  trellis.pixels.show();
   state = IDLE_LIGHT_UP;
 }

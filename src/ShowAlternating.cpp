@@ -8,7 +8,7 @@
 
 #include "ShowAlternating.h"
 
-ShowAlternating::ShowAlternating(Adafruit_Trellis& t)
+ShowAlternating::ShowAlternating(Adafruit_NeoTrellis& t)
 : trellis(t) {}
 
 void ShowAlternating::initialize() {  
@@ -17,8 +17,6 @@ void ShowAlternating::initialize() {
   brightness = BRIGHTNESS_MIN;
   ticks = 0L;
   
-  trellis.setBrightness(brightness);
-  trellis.blinkRate(HT16K33_BLINK_OFF);
   toggleLED();
 }
 
@@ -26,12 +24,12 @@ void ShowAlternating::toggleLED() {
   for (byte i = 0; i < NUMKEYS; i++) {
     bool on = i / 4 % 2 ? even : !even;
     if (i % 2 != on) {
-      trellis.setLED(i);
+      trellis.pixels.setPixelColor(i, wheel(i, brightness));
     } else {
-      trellis.clrLED(i);
+      trellis.pixels.setPixelColor(i, 0);
     }
   }
-  trellis.writeDisplay();
+  trellis.pixels.show();
 }
 
 void ShowAlternating::tickMs() {
@@ -49,18 +47,18 @@ void ShowAlternating::tickMs() {
 }
 
 void ShowAlternating::onIdleUp() {
-  trellis.setBrightness(++brightness);
+  ++brightness;
+  toggleLED();
   if (brightness >= BRIGHTNESS_MAX) {
     state = IDLE_DOWN;
   }
 }
 
 void ShowAlternating::onIdleDown() {
-  trellis.setBrightness(--brightness);
+  --brightness;
+  toggleLED();
   if (brightness <= BRIGHTNESS_MIN) {
     state = IDLE_OFF;
-    trellis.clear();
-    trellis.writeDisplay();
   }
 }
 
@@ -69,4 +67,3 @@ void ShowAlternating::onIdleOff() {
   even = !even;
   toggleLED();
 }
-

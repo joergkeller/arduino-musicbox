@@ -9,20 +9,17 @@
 #define ShowRunning_h
 
 #include <Arduino.h>
-#include <Adafruit_Trellis.h>
+#include <Adafruit_NeoTrellis.h>
 #include "ShowAbstract.h"
 
 // Delays [ms]
-#define BLANK_DELAY    2500
-#define BLINK_DELAY      20
+#define BLANK_DELAY    1500
+#define BLINK_DELAY      25
 #define HOLD_DELAY     1500
 #define PAUSE_DELAY    1000
 
 // Trellis LED brightness 1..15
 #define BRIGHTNESS_IDLE   15
-
-// Trellis setup
-#define NUMKEYS   16
 
 // States
 #define IDLE_LIGHT_UP   1
@@ -33,12 +30,12 @@
 
 class ShowRunning : public ShowAbstract {
   public:
-    ShowRunning(Adafruit_Trellis& t);
+    ShowRunning(Adafruit_NeoTrellis& t);
     virtual void initialize();
     virtual void tickMs();
 
   private:
-    Adafruit_Trellis& trellis;
+    Adafruit_NeoTrellis& trellis;
     byte state;
     byte nextLED;
     unsigned long ticks;

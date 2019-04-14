@@ -16,12 +16,12 @@ Matrix::Matrix() {
 
 void Matrix::initialize() {
   // clear display
-  trellis.begin(0x70);
-  trellis.clear();
-  trellis.writeDisplay();
+  trellis.begin();
+  trellis.pixels.clear();
+  trellis.pixels.show();
 
   // ignore already pressed switches
-  trellis.readSwitches(); 
+  //trellis.readSwitches(); 
 }
 
 void Matrix::tickMs() {
@@ -37,14 +37,15 @@ void Matrix::idle() {
 
 void Matrix::blink(byte index, bool fast) {
   isIdle = false;
-  trellis.clear();
-  trellis.setBrightness(BRIGHTNESS_PLAYING);
-  trellis.setLED(index);
-  trellis.blinkRate(fast ? HT16K33_BLINK_1HZ : HT16K33_BLINK_HALFHZ);
-  trellis.writeDisplay();
+  //trellis.pixels.clear();
+  //trellis.pixels.setPixelColor(index, show.wheel(index));
+  trellis.pixels.setBrightness(BRIGHTNESS_PLAYING);
+  //trellis.blinkRate(fast ? HT16K33_BLINK_1HZ : HT16K33_BLINK_HALFHZ);
+  trellis.pixels.show();
 }
 
 void Matrix::waitForNoKeyPressed() {
+  /*
   unsigned long timeout = millis() + 1000;
   while (millis() <= timeout) { 
     byte keyPressed = 0;
@@ -55,9 +56,11 @@ void Matrix::waitForNoKeyPressed() {
     if (keyPressed == 0) return;
     delay(50);
   }
+  */
 }
 
 int Matrix::getPressedKey() {
+  /*
   if (trellis.readSwitches()) {
     for (byte i = 0; i < NUMKEYS; i++) {
       if (trellis.justPressed(i)) {
@@ -65,19 +68,24 @@ int Matrix::getPressedKey() {
       }
     }
   }
+  */
   return -1;
 }
 
 void Matrix::sleep() {
   isIdle = false;
+  /*
   trellis.clear();
   trellis.writeDisplay();
   trellis.sleep();
+  */
 }
 
 void Matrix::wakeup() {
   isIdle = false;
+  /*
   trellis.wakeup();
+  */
 }
 
 void Matrix::enableInterrupt(void (*isr)(void)) {
@@ -87,4 +95,3 @@ void Matrix::enableInterrupt(void (*isr)(void)) {
 void Matrix::disableInterrupt() {
   detachInterrupt(digitalPinToInterrupt(TRELLIS_INT_PIN));
 }
-

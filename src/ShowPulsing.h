@@ -9,18 +9,15 @@
 #define ShowPulsing_h
 
 #include <Arduino.h>
-#include <Adafruit_Trellis.h>
+#include <Adafruit_NeoTrellis.h>
 #include "ShowAbstract.h"
 
 // Delays [ms]
-#define STEP_DELAY   300
+#define STEP_DELAY   30
 
-// Trellis LED brightness 1..15
+// NeoTrellis LED brightness 1..255
 #define BRIGHTNESS_MIN    0
-#define BRIGHTNESS_MAX   15
-
-// Trellis setup
-#define NUMKEYS   16
+#define BRIGHTNESS_MAX   64
 
 // States
 #define IDLE_UP      1
@@ -29,16 +26,17 @@
 
 class ShowPulsing : public ShowAbstract {
   public:
-    ShowPulsing(Adafruit_Trellis& t);
+    ShowPulsing(Adafruit_NeoTrellis& t);
     virtual void initialize();
     virtual void tickMs();
 
   private:
-    Adafruit_Trellis& trellis;
+    Adafruit_NeoTrellis& trellis;
     byte state;
-    byte brightness;
+    uint8_t brightness;
     unsigned long ticks;
 
+    void showWheel();
     void onIdleUp();
     void onIdleDown();
 };

@@ -23,7 +23,6 @@
 #include <Wire.h>
 #include <SPI.h>
 #include <SD.h>
-#include <LowPower.h>
 #include <PN532_I2C.h>
 #include <PN532.h>
 #include <NfcAdapter.h>
@@ -32,6 +31,9 @@
 #include "Matrix.h"
 #include "Player.h"
 
+#ifndef ESP32
+#include <LowPower.h>
+#endif
 
 // Delays [ms]
 #define PAUSE_DELAY    1000
@@ -70,7 +72,6 @@ unsigned long nextIdleTick = millis() + 1;
 unsigned long nextTimeoutTick = 0;
 byte state = IDLE;
 byte playingAlbum;
-
 
 /***************************************************
    Setup
@@ -118,7 +119,6 @@ void onEnterIdle(unsigned int delay) {
   nextIdleTick = millis() + 1 + delay;
   nextTimeoutTick = millis() + IDLE_TIMEOUT;
 }
-
 
 /***************************************************
    External event handler
@@ -210,8 +210,13 @@ void tickIdleTimeout(unsigned long now) {
   matrix.enableInterrupt(trellisIsr);
   #if defined (__AVR__)
     LowPower.powerDown(SLEEP_8S, ADC_OFF, BOD_OFF); 
-  #else
+  #endif
+  #if defined (__arm__)
+    // TODO power down M0
     LowPower.standby();
+  #endif
+  #if defined (ESP32)
+    // TODO power down ESP32
   #endif
 
   if (state == TIMEOUT_WAIT) {
@@ -323,8 +328,8 @@ void onNfcId(String hexId) {
   if (trackName.length() == 0) {
     Serial.print(F("Unknown nfc id ")); Serial.println(hexId);
     File file = SD.open("nfc.cfg", FILE_WRITE);
-    file.write(hexId.c_str());
-    file.write("=\n");
+    file.write((unsigned char*)hexId.c_str(), hexId.length());
+    file.write((unsigned char*)"=\n", 2);
     file.close();
   } else {
     Serial.print(F("Playing file ")); Serial.println(trackName);

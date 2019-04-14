@@ -9,7 +9,7 @@
 #define Matrix_h
 
 #include <Arduino.h>
-#include <Adafruit_Trellis.h>
+#include "Adafruit_NeoTrellis.h"
 #include "ShowAbstract.h"
 #include "ShowAlwaysOn.h"
 #include "ShowRunning.h"
@@ -47,7 +47,7 @@ class Matrix {
     void disableInterrupt();
 
   private:
-    Adafruit_Trellis trellis = Adafruit_Trellis();
+    Adafruit_NeoTrellis trellis = Adafruit_NeoTrellis();
     SHOW_CLASS show = SHOW_CLASS(trellis);
     bool isIdle = false;
 };
