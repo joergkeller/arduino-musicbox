@@ -19,15 +19,15 @@
 // Define the idle mode (ShowAlwaysOn, ShowRunning, ShowPulsing, ShowAlternating)
 #define SHOW_CLASS   ShowPulsing
 
-// Trellis LED brightness 1..15
-#define BRIGHTNESS_PLAYING   15
+// Trellis LED brightness 0..255
+#define BRIGHTNESS_PLAYING   96
 
 // Trellis setup
 #define TRELLIS_INT_PIN    1
 
 /*
- * Provides access to a trellis 4x4 board with LED output and key input.
- * The LED can be switched on/off, have a level of brightness and can blink in two frequencies. Keys can be polled.
+ * Provides access to a neo-trellis 4x4 board with LED output and key input.
+ * The RGB-LED can have any color/brightness and keys can trigger events.
  */
 class Matrix {
   public:

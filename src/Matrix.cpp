@@ -37,10 +37,8 @@ void Matrix::idle() {
 
 void Matrix::blink(byte index, bool fast) {
   isIdle = false;
-  //trellis.pixels.clear();
-  //trellis.pixels.setPixelColor(index, show.wheel(index));
-  trellis.pixels.setBrightness(BRIGHTNESS_PLAYING);
-  //trellis.blinkRate(fast ? HT16K33_BLINK_1HZ : HT16K33_BLINK_HALFHZ);
+  trellis.pixels.clear();
+  trellis.pixels.setPixelColor(index, show.wheel(index, BRIGHTNESS_PLAYING));
   trellis.pixels.show();
 }
 

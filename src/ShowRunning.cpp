@@ -16,8 +16,6 @@ void ShowRunning::initialize() {
   nextLED = 0;
   ticks = 0L;
   
-  trellis.pixels.setBrightness(BRIGHTNESS_IDLE);
-  //trellis.blinkRate(HT16K33_BLINK_OFF);
   trellis.pixels.clear();
   trellis.pixels.show();
 }
@@ -40,7 +38,7 @@ void ShowRunning::tickMs() {
 }
 
 void ShowRunning::onIdleLightUp() {
-  trellis.pixels.setPixelColor(nextLED, wheel(nextLED));
+  trellis.pixels.setPixelColor(nextLED, wheel(nextLED, BRIGHTNESS_IDLE));
   trellis.pixels.show();
   nextLED = (nextLED + 1) % NUMKEYS;
   if (nextLED == 0) {

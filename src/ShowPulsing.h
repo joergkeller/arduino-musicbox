@@ -15,7 +15,7 @@
 // Delays [ms]
 #define STEP_DELAY   30
 
-// NeoTrellis LED brightness 1..255
+// NeoTrellis LED brightness 0..255
 #define BRIGHTNESS_MIN    0
 #define BRIGHTNESS_MAX   64
 

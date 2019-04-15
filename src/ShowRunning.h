@@ -18,8 +18,8 @@
 #define HOLD_DELAY     1500
 #define PAUSE_DELAY    1000
 
-// Trellis LED brightness 1..15
-#define BRIGHTNESS_IDLE   15
+// Trellis LED brightness 0..255
+#define BRIGHTNESS_IDLE   64
 
 // States
 #define IDLE_LIGHT_UP   1

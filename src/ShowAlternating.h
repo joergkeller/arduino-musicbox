@@ -17,7 +17,7 @@
 
 // Trellis LED brightness 0..255
 #define BRIGHTNESS_MIN    0
-#define BRIGHTNESS_MAX   96
+#define BRIGHTNESS_MAX   64
 
 // States
 #define IDLE_UP      1

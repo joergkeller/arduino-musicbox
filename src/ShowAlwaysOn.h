@@ -12,8 +12,8 @@
 #include <Adafruit_NeoTrellis.h>
 #include "ShowAbstract.h"
 
-// Trellis LED brightness 1..15
-#define BRIGHTNESS_IDLE   15
+// Trellis LED brightness 0..255
+#define BRIGHTNESS_IDLE   64
 
 
 class ShowAlwaysOn : public ShowAbstract {

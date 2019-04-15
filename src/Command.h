@@ -26,8 +26,8 @@
 #define BLINK_DURATION   10 // ms
 
 extern "C" {
-typedef void (*CallbackIntFunction)(int);
-typedef void (*CallbackVoidFunction)(void);
+  typedef void (*CallbackIntFunction)(int);
+  typedef void (*CallbackVoidFunction)(void);
 }
 
 class Command {

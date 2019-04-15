@@ -12,10 +12,8 @@ ShowAlwaysOn::ShowAlwaysOn(Adafruit_NeoTrellis& t)
 : trellis(t) {}
 
 void ShowAlwaysOn::initialize() {  
-  trellis.pixels.setBrightness(BRIGHTNESS_IDLE);
-  //trellis.blinkRate(HT16K33_BLINK_OFF);
   for (byte i = 0; i < NUMKEYS; i++) {
-    trellis.pixels.setPixelColor(i, wheel(i));
+    trellis.pixels.setPixelColor(i, wheel(i, BRIGHTNESS_IDLE));
   }
   trellis.pixels.show();
 }
