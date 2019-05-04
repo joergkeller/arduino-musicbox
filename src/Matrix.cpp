@@ -19,12 +19,13 @@ void Matrix::initialize() {
   trellis.begin();
   trellis.pixels.clear();
   trellis.pixels.show();
-
-  // ignore already pressed switches
-  //trellis.readSwitches(); 
 }
 
 void Matrix::tickMs() {
+  if (++readTicks > KEY_READ_DELAY) {
+    readTicks = 0;
+    trellis.read(true); // polling mode
+  }
   if (isIdle) {
     show.tickMs();
   }
@@ -43,31 +44,21 @@ void Matrix::blink(byte index, bool fast) {
 }
 
 void Matrix::waitForNoKeyPressed() {
-  /*
-  unsigned long timeout = millis() + 1000;
-  while (millis() <= timeout) { 
-    byte keyPressed = 0;
-    trellis.readSwitches();
-    for (byte i = 0; i < NUMKEYS; i++) {
-      keyPressed += trellis.isKeyPressed(i) ? 1 : 0;
-    }
-    if (keyPressed == 0) return;
-    delay(50);
-  }
-  */
 }
 
 int Matrix::getPressedKey() {
-  /*
-  if (trellis.readSwitches()) {
-    for (byte i = 0; i < NUMKEYS; i++) {
-      if (trellis.justPressed(i)) {
-        return i;
-      }
-    }
-  }
-  */
   return -1;
+}
+
+/*
+ * Activate all keys and set callback.
+ */
+void Matrix::attachKeyPress( TrellisCallback (*handler)(keyEvent)) {
+  for (int i = 0; i < NUMKEYS; i++){
+    trellis.activateKey(i, SEESAW_KEYPAD_EDGE_RISING);
+    //trellis.activateKey(i, SEESAW_KEYPAD_EDGE_FALLING);
+    trellis.registerCallback(i, handler);
+  }
 }
 
 void Matrix::sleep() {

@@ -1,6 +1,6 @@
 /*
- * Class to drive a trellis display matrix.
- * 
+ * Class to drive a neo-trellis display matrix.
+ *
  * Written by Jörg Keller, Winterthur, Switzerland
  * https://github.com/joergkeller/arduino-musicbox
  * MIT license, all text above must be included in any redistribution
@@ -22,6 +22,9 @@
 // Trellis LED brightness 0..255
 #define BRIGHTNESS_PLAYING   96
 
+// Delay to read neo-trellis keys
+#define KEY_READ_DELAY  20 // ms, the neo-trellis has a resolution of around 60 Hz approx. 17 ms
+
 // Trellis setup
 #define TRELLIS_INT_PIN    1
 
@@ -40,6 +43,7 @@ class Matrix {
 
     void waitForNoKeyPressed();
     int getPressedKey();
+    void attachKeyPress(TrellisCallback (*handler)(keyEvent));
 
     void sleep();
     void wakeup();
@@ -50,6 +54,7 @@ class Matrix {
     Adafruit_NeoTrellis trellis = Adafruit_NeoTrellis();
     SHOW_CLASS show = SHOW_CLASS(trellis);
     bool isIdle = false;
+    byte readTicks = 0;
 };
 
 #endif
