@@ -6,7 +6,7 @@
 	url = https://github.com/joergkeller/Adafruit_Trellis_Library.git
 [submodule "libraries/Adafruit_VS1053"]
 	path = libraries/Adafruit_VS1053
-	url = https://github.com/joergkeller/Adafruit_VS1053_Library.git
+	url = https://github.com/adafruit/Adafruit_VS1053_Library.git
 [submodule "libraries/Low-Power"]
 	path = libraries/Low-Power
 	url = https://github.com/rocketscream/Low-Power.git
