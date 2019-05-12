@@ -1,9 +1,11 @@
-# Bedienungsanleitung "Musikwürfel"
+# Bedienungsanleitung "Musikbox"
+
+Diese Anleitung gilt für Musikbox v2 "AM", Stand 11.5.2019
 
 ## Einschalten 
 
 Der Musikwürfel kann entweder über den USB-micro Anschluss oder über den eingebauten Akku betrieben werden.
-Im Akkubetrieb schaltet der Ein-/Ausschalter (nach vorne) das Gerät ein. Mit USB wird das Gerät mit Strom versorgt, sobald das Kabel eingesteckt ist.
+Im Akkubetrieb schaltet der Ein-/Ausschalter (nach vorne/oben) das Gerät ein. Mit USB wird das Gerät mit Strom versorgt, sobald das Kabel eingesteckt ist.
 Kurz nach dem Einschalten leuchten die 16 Tasten auf der Front in individuellen Farben auf. Das bedeutet, dass das Gerät bereit ist und die Musik ausgewählt werden kann.
 
 Bemerkung: Je nach Konfiguration der Firmware leuchten die Fronttasten konstant, werden langsam auf-/abgeblendet oder wandern als Lauflicht.
@@ -17,22 +19,22 @@ Wenn ein Musikstück fertig ist, wird innerhalb eines Albums automatisch auf das
 
 Falls einer Taste kein Musikstück/Album hinterlegt ist, geht das Gerät sofort wieder in den Grundzustand (alle Tasten leuchten).
 
-Bemerkung: Innerhalb eines Albums kann nur vorwärts "geblättert" werden. Um wieder an den Anfang zu gelangen, muss man sich durch das ganze Album drücken, oder besser das Abspielen durch langes Drücken auf den Drehregler beenden und das Album erneut auswählen.
+Bemerkung: Innerhalb eines Albums kann nur vorwärts "geblättert" werden. Um wieder an den Anfang zu gelangen, muss man sich durch das ganze Album drücken. ~~oder besser das Abspielen durch langes Drücken auf den Drehregler beenden und das Album erneut auswählen.~~
 
-### Musik mit Figur auswählen
+### ~~Musik mit Figur auswählen~~
 
-In der Konfiguration des Gerätes können NFC-Ids mit einem Musikstück verknüpft werden. Wenn eine Figur oder ein anderer Gegenstand mit einem entsprechenden NFC-Tag auf den Deckel des Musikwürfels gelegt wird, wird das entsprechende Stück abgespielt.
+~~In der Konfiguration des Gerätes können NFC-Ids mit einem Musikstück verknüpft werden. Wenn eine Figur oder ein anderer Gegenstand mit einem entsprechenden NFC-Tag auf den Deckel des Musikwürfels gelegt wird, wird das entsprechende Stück abgespielt.~~
 
-Bemerkung: Beim Abspielen eines Stücks über diese Funktion blinkt immer die erste Fronttaste.
+~~Bemerkung: Beim Abspielen eines Stücks über diese Funktion blinkt immer die erste Fronttaste.~~
 
 
-## Abspielen pausieren oder abbrechen
+## ~~Abspielen pausieren oder abbrechen~~
 
-Durch kurzen Druck auf den Drehregler wird das aktuelle Stück pausiert. Das wird durch langsameres Blinken der aktuellen Fronttaste dargestellt. Ausserdem blinkt der Drehregler blau. Erneutes Drücken des Drehreglers spielt das Musikstück weiter ab.
+~~Durch kurzen Druck auf den Drehregler wird das aktuelle Stück pausiert. Das wird durch langsameres Blinken der aktuellen Fronttaste dargestellt. Ausserdem blinkt der Drehregler blau. Erneutes Drücken des Drehreglers spielt das Musikstück weiter ab.~~
 
-Durch langer Druck auf den Drehregler (ca. 1 sek) wird das aktuelle Stück abgebrochen und das Gerät geht zurück in den Grundzustand (alle Tasten leuchten).
+~~Durch langer Druck auf den Drehregler (ca. 1 sek) wird das aktuelle Stück abgebrochen und das Gerät geht zurück in den Grundzustand (alle Tasten leuchten).~~
 
-Bemerkung: Der Pausenzustand hat immer noch einen erhöhten Stromverbrauch, da der Musikdecoder immer läuft und das Musikstück geladen ist. Deshalb wird nach einer konfigurierbaren Zeit (aktuell 60 min) das Gerät in den Standby-Modus gesetzt, worauf eine Fortsetzung des Stücks nicht mehr möglich ist.
+~~Bemerkung: Der Pausenzustand hat immer noch einen erhöhten Stromverbrauch, da der Musikdecoder immer läuft und das Musikstück geladen ist. Deshalb wird nach einer konfigurierbaren Zeit (aktuell 60 min) das Gerät in den Standby-Modus gesetzt, worauf eine Fortsetzung des Stücks nicht mehr möglich ist.~~
 
 
 ## Lautstärke regeln
@@ -42,13 +44,13 @@ Mit dem Drehregler kann die Lautstärke geregelt werden. Minimale und maximale L
 Bemerkung: Wenn das Gerät ausgeschaltet oder in den Standby-Modus geht, wird die Lautstärke auf den initialen Wert zurückgesetzt.
 
 
-## Gerät in Standby-Modus setzen
+## ~~Gerät in Standby-Modus setzen~~
 
-Im Grundmodus (alle Tasten leuchten) kann das Gerät durch langes Drücken (ca. 1 sek) auf den Drehregler in den Standby-Modus gesetzt werden. Nach einiger Zeit im Grundmodus (aktuell 15 min) schaltet sich das Gerät automatisch in den Standby-Modus. Hier werden alle Funktionen abgestellt und der Stromverbrauch wird reduziert. Im Standbymodus blinkt der Drehregler ca. alle 8 sek.
+~~Im Grundmodus (alle Tasten leuchten) kann das Gerät durch langes Drücken (ca. 1 sek) auf den Drehregler in den Standby-Modus gesetzt werden. Nach einiger Zeit im Grundmodus (aktuell 15 min) schaltet sich das Gerät automatisch in den Standby-Modus. Hier werden alle Funktionen abgestellt und der Stromverbrauch wird reduziert. Im Standbymodus blinkt der Drehregler ca. alle 8 sek.~~
 
-Das Abspielen eines Musikstücks wird ebenfalls durch langes Drücken (ca. 1 sek) gestoppt. Um nicht versehentlich die Funktion zu aktivieren, muss der Drehregler dann losgelassen und erneut lang gedrückt werden um in den Standby-Modus zu gelangen.
+~~Das Abspielen eines Musikstücks wird ebenfalls durch langes Drücken (ca. 1 sek) gestoppt. Um nicht versehentlich die Funktion zu aktivieren, muss der Drehregler dann losgelassen und erneut lang gedrückt werden um in den Standby-Modus zu gelangen.~~
 
-Durch Drücken einer beliebigen Fronttaste wird das Gerät wieder aktiviert und gelangt in den Grundmodus (alle Tasten leuchten). Dabei ist aber noch kein Album/Stück ausgewählt, dazu muss erneut eine der Fronttasten gedrückt werden.
+~~Durch Drücken einer beliebigen Fronttaste wird das Gerät wieder aktiviert und gelangt in den Grundmodus (alle Tasten leuchten). Dabei ist aber noch kein Album/Stück ausgewählt, dazu muss erneut eine der Fronttasten gedrückt werden.~~
 
 
 ## Akku aufladen
@@ -97,4 +99,5 @@ MIDI Instrumente siehe [VS1053 Datenblatt](https://cdn-shop.adafruit.com/datashe
 ## Weitere Konfigurationen
 - settings.cfg - wird im Moment nicht unterstützt
 - buttons.cfg - wird im Moment nicht unterstützt
+
 Alle Konfigurationen werden direkt im Code festgelegt.
