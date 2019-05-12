@@ -22,7 +22,7 @@ RotaryEncoder encoder(A0, A1);
 
 void setup()
 {
-  Serial.begin(57600);
+  Serial.begin(19200);
   Serial.println("SimplePollRotator example for the RotaryEncoder library.");
 } // setup()
 

@@ -7,7 +7,7 @@
 
 Adafruit_NeoTrellis trellis;
 
-#define INT_PIN 1
+#define INT_PIN 4   // ESP32 A5/4
 
 // Input a value 0 to 255 to get a color value.
 // The colors are a transition r - g - b - back to r.
@@ -36,7 +36,7 @@ TrellisCallback blink(keyEvent evt){
 }
 
 void setup() {
-  Serial.begin(9600);
+  Serial.begin(19200);
   //while(!Serial);
 
   pinMode(INT_PIN, INPUT);

@@ -66,9 +66,8 @@ PN532 nfc(pn532i2c);
 
 
 unsigned long tickMs = 0;
-unsigned long nextReadTick = millis() + 1;
 unsigned long nextNfcTick = millis() + 1;
-unsigned long nextIdleTick = millis() + 1;
+unsigned long nextPauseTick = millis() + 1;
 unsigned long nextTimeoutTick = 0;
 byte state = IDLE;
 byte playingAlbum;
@@ -78,13 +77,14 @@ byte playingAlbum;
  ****************************************************/
 void setup() {
   Serial.begin(19200);
-  while (!Serial && millis() < nextIdleTick + 75);
+  while (!Serial && millis() < nextPauseTick + 75);
   Serial.println(F("MusicBox setup"));
 
   command.initialize();
   matrix.initialize();
+  matrix.attachKeyPress(onTrellisKey);
   player.initialize();
-  initializeNfc();
+  //initializeNfc();
 
   command.attachRotary(onRotaryChange);
   command.attachClick(onClick);
@@ -112,11 +112,10 @@ void initializeNfc() {
 void onEnterIdle(unsigned int delay) {
   state = IDLE;
   matrix.idle();
-  enableNfc(true);
+  //enableNfc(true);
 
-  nextReadTick = millis() + 1;
   nextNfcTick = millis() + 1;
-  nextIdleTick = millis() + 1 + delay;
+  nextPauseTick = millis() + 1 + delay;
   nextTimeoutTick = millis() + IDLE_TIMEOUT;
 }
 
@@ -154,37 +153,32 @@ void onLongClick() {
   }
 }
 
+TrellisCallback onTrellisKey(keyEvent evt){
+  onKey(evt.bit.NUM);
+}
+
+
 /***************************************************
    Loop
  ****************************************************/
 void loop() {
   unsigned long now = millis();
 
-  // Rollover millis since start
-  if (nextReadTick > now + ROLLOVER_GAP) {
-    Serial.println(F("Rollover timer ticks!"));
-    nextReadTick = now + 1;
-    nextIdleTick = now + 1;
-    nextTimeoutTick = nextTimeoutTick == 0 ? 0 : now + IDLE_TIMEOUT;
-  }
-
   // Next ticks (timeout check first to go back to sleep mode after blink)
   if (0 < nextTimeoutTick && nextTimeoutTick <= now) {
-    tickIdleTimeout(now);
-  }
-  if (0 < nextReadTick && nextReadTick <= now) {
-    tickReadKeys(now);
+    //tickIdleTimeout(now);
   }
   if (0 < nextNfcTick && nextNfcTick <= now) {
     tickReadNfc(now);
   }
-  if (0 < nextIdleTick && nextIdleTick <= now) {
-    tickIdleShow(now);
+  if (0 < nextPauseTick && nextPauseTick <= now) {
+    tickPauseShow(now);
   }
 
   if (now != tickMs) {
     command.tickMs();
     matrix.tickMs();
+    player.tickMs();
     player.checkHeadphoneLevel();
     tickMs = now;
   }
@@ -195,11 +189,11 @@ void loop() {
   }
 }
 
-void tickIdleShow(unsigned long now) {
+void tickPauseShow(unsigned long now) {
   // Blink in pause mode
   if (state == PLAY_PAUSED) {
     command.blink(COLOR_BLUE);
-    nextIdleTick = now + PAUSE_DELAY;
+    nextPauseTick = now + PAUSE_DELAY;
   }
 }
 
@@ -251,16 +245,6 @@ void onSleepWake() {
   onEnterIdle(0);
 }
 
-void tickReadKeys(unsigned long now) {
-  // Read trellis keys
-  int index = matrix.getPressedKey();
-  if (index != -1) {
-    onKey(index);
-  }
-
-  nextReadTick = now + READ_DELAY;
-}
-
 unsigned long tickReadNfc(unsigned long now) {
   // Wait for an ISO14443A type cards (Mifare, etc.).
   // Length of uid is 4 bytes (Mifare Classic) or 7 bytes (Mifare Ultralight).
@@ -302,7 +286,7 @@ void onKey(byte index) {
 	  matrix.blink(index, true);
     nextTimeoutTick = 0; // no timeout during playing
     nextNfcTick = 0; // no nfc reading during playing
-    enableNfc(false);
+    //enableNfc(false);
 	  player.enable(true);
 	  if (player.startFirstTrack(index)) {
       state = PLAY_SELECTED;

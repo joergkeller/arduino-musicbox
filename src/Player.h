@@ -14,15 +14,15 @@
 #include <SD.h>
 
 // Feather/Wing pin setup
-#define MUSIC_RESET_PIN   12     // VS1053 reset pin
-#define CARD_CS_PIN        5     // Card chip select pin
-#define MUSIC_CS_PIN       6     // VS1053 chip select pin (output)
-#define MUSIC_DCS_PIN     10     // VS1053 Data/command select pin (output)
-#define MUSIC_DREQ_PIN     9     // VS1053 Data request, ideally an Interrupt pin (not possible on 32u4)
+#define MUSIC_RESET_PIN   12     // VS1053 reset pin (AVR/ESP32 both #12)
+#define CARD_CS_PIN       14     // Card chip select pin (output) (AVR #5 -> ESP32 #14)
+#define MUSIC_CS_PIN      32     // VS1053 chip select pin (output) (AVR #6 -> ESP32 #32)
+#define MUSIC_DCS_PIN     33     // VS1053 Data/command select pin (output) (AVR #10 -> ESP32 #33)
+#define MUSIC_DREQ_PIN    15     // VS1053 Data request, ideally an Interrupt pin (AVR #9 -> ESP32 #15)
 
 // Amplifier pin setup
-#define AMPLIFIER_ENABLE_PIN   11   // Enable both amplifier channels
-#define HEADPHONE_LEVEL_PIN    A2   // Voltage level indicates headphone plugin
+#define AMPLIFIER_ENABLE_PIN   27   // Enable both amplifier channels (AVR #11 -> ESP32 #27)
+#define HEADPHONE_LEVEL_PIN    A3   // Voltage level indicates headphone plugin (moved to Pin 8, ESP32 A3/#39)
 #define HEADPHONE_THRESHOLD   100   // Plugged-in: ~20, Unplugged: ~890
 
 // Volume
@@ -39,6 +39,8 @@ class Player {
   public:
     Player();
     void initialize();
+
+    void tickMs();
 	
     void enable(bool enable);
     void changeVolume(int encoderChange);

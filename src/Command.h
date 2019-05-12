@@ -11,14 +11,12 @@
 #include <RotaryEncoder.h>
 #include <OneButton.h>
 
-#define ENCODER_A_PIN       A0
-#define ENCODER_B_PIN       A1
+#define ENCODER_A_PIN       A0    // (AVR A0/#18 -> ESP32 A0/#26)
+#define ENCODER_B_PIN       A1    // (AVR A1/#19 -> ESP32 A1/#25)
+#define ENCODER_SWITCH_PIN  A2    // (moved to Pin 7, ESP32 A2/#34)
 #define VOLUME_DIRECTION    -3    // set direction of encoder-volume
-#define ENCODER_SWITCH_PIN   0
 
-#define RED_LED_PIN         A3
-#define GREEN_LED_PIN       A4
-#define BLUE_LED_PIN        A5
+#define RGB_LED_PIN         A4    // (moved to Pin 9, ESP32 A4/#36)
 
 #define COLOR_RED         1
 #define COLOR_GREEN       2
@@ -54,7 +52,7 @@ class Command {
 
     private:
         RotaryEncoder encoder = RotaryEncoder(ENCODER_A_PIN, ENCODER_B_PIN);
-        OneButton button = OneButton(ENCODER_SWITCH_PIN, LOW, false);
+        OneButton button = OneButton(ENCODER_SWITCH_PIN, HIGH, true);
 
         CallbackIntFunction rotaryFunction;
 

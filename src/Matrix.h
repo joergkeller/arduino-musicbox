@@ -26,7 +26,7 @@
 #define KEY_READ_DELAY  20 // ms, the neo-trellis has a resolution of around 60 Hz approx. 17 ms
 
 // Trellis setup
-#define TRELLIS_INT_PIN    1
+#define TRELLIS_INT_PIN    4    // (moved to Pin 10, ESP A5/#4)
 
 /*
  * Provides access to a neo-trellis 4x4 board with LED output and key input.

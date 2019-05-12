@@ -18,13 +18,13 @@
 
 #include "OneButton.h"
 
-// Setup a new OneButton on pin 0.  
-OneButton button(0, LOW, false);
+// Setup a new OneButton on pin A2/#34  
+OneButton button(34, LOW, true);
 
 
 // setup code here, to run once:
 void setup() {
-  Serial.begin(14400);
+  Serial.begin(19200);
   delay(300);
   Serial.println("SimpleOneButton setup");
   

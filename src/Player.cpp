@@ -68,10 +68,15 @@ void Player::initializePlayer() {
 
   // Timer interrupts are not suggested, better to use DREQ interrupt!
   // but we don't have them on the 32u4 feather...
-  player.useInterrupt(VS1053_FILEPLAYER_TIMER0_INT); // timer int
+  //player.useInterrupt(VS1053_FILEPLAYER_TIMER0_INT); // timer int
   Serial.println(F("VS1053 initialized"));
 
+  player.setVolume(volume, volume);
   enablePlayer(false);
+}
+
+void Player::tickMs() {
+  player.feedBuffer();
 }
 
 void Player::enable(bool enable) {
@@ -147,9 +152,11 @@ bool Player::startFirstTrack(byte albumIndex) {
   if (album && album.isDirectory()) { album.close(); }
   // open indexed album
   int albumNr = albumIndex + 1;
-  String albumTemplate = F("ALBUM");
+  String albumTemplate = F("/album");
   String albumName = albumTemplate + albumNr;
+  Serial.print("Opening "); Serial.println(albumName);
   album = SD.open(albumName);
+  if (!album) Serial.println("Album does not exist!"); 
   return nextTrack();
 }
 
@@ -163,9 +170,10 @@ bool Player::nextTrack() {
   File track = album.openNextFile();
   if (!track) return false;
 
-  String albumName = album.name();
-  String dirPath = albumName + '/';
-  String filePath = dirPath + track.name();
+//  String albumName = album.name();
+//  String dirPath = albumName + '/';
+//  String filePath = dirPath + track.name();
+  String filePath = track.name();
   Serial.print(F("Next track: ")); Serial.println(filePath);
   track.close();
 

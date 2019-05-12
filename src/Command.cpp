@@ -10,15 +10,11 @@
 
 
 Command::Command() {
-  pinMode(RED_LED_PIN, OUTPUT);
-  pinMode(GREEN_LED_PIN, OUTPUT);
-  pinMode(BLUE_LED_PIN, OUTPUT);
+  pinMode(RGB_LED_PIN, OUTPUT);
 }
 
 void Command::initialize() {
-  digitalWrite(RED_LED_PIN, HIGH);   // LED off
-  digitalWrite(GREEN_LED_PIN, HIGH); // LED off
-  digitalWrite(BLUE_LED_PIN, HIGH);  // LED off
+  digitalWrite(RGB_LED_PIN, HIGH);   // LED off
 }
 
 void Command::tickMs() {
@@ -36,9 +32,9 @@ void Command::tickMs() {
 
 void Command::blink(int color) {
   switch(color) {
-    case COLOR_RED:   blinkLED(RED_LED_PIN); break;
-    case COLOR_GREEN: blinkLED(GREEN_LED_PIN); break;
-    case COLOR_BLUE:  blinkLED(BLUE_LED_PIN); break;
+    case COLOR_RED:   blinkLED(RGB_LED_PIN); break;
+    case COLOR_GREEN: blinkLED(RGB_LED_PIN); break;
+    case COLOR_BLUE:  blinkLED(RGB_LED_PIN); break;
   }
 }
 
