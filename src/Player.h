@@ -43,16 +43,17 @@ class Player {
     void enable(bool enable);
     void changeVolume(int encoderChange);
     void checkHeadphoneLevel();
-  
+
+    bool startPlaying(const char* path);
     bool startFirstTrack(byte albumIndex);
-    bool startFile(char* trackName);
+    bool startFile(const char* trackName); // obsolete?
     bool nextTrack();
     void pause(bool pause);
     void stop();
     bool hasStopped();
 	
   private:
-    const Adafruit_VS1053_FilePlayer player = Adafruit_VS1053_FilePlayer(MUSIC_RESET_PIN, MUSIC_CS_PIN, MUSIC_DCS_PIN, MUSIC_DREQ_PIN, CARD_CS_PIN);
+    Adafruit_VS1053_FilePlayer player = Adafruit_VS1053_FilePlayer(MUSIC_RESET_PIN, MUSIC_CS_PIN, MUSIC_DCS_PIN, MUSIC_DREQ_PIN, CARD_CS_PIN);
     
     File album;
     int volume = VOLUME_INITIAL;

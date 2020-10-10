@@ -31,13 +31,16 @@ git submodule update
 ```
 
 ## Remarks on the hardware
+* See [wiring schema](extras/schema/MusicBox_Schaltplan.pdf)
 * Cut the "RESET" bridge on the Adafruit MusicMaker FeatherWing (otherwise a reset of the mp3 chip will also reset the arduino board).
 * Set dip switches on the NFC board to use I2C (1: ON, 2: OFF)
 
 ## Prepare micro SD card
 Copy \<musicbox\>/extras/config/*.cfg in root directory of the SD card.\
 Create/fill folders album1 .. album16 with your music files.\
-Stories and songs for NFC-chips can be in separate folders, list NFC id in nfc.cfg.
+List NFC id in nfc.cfg.\
+Paths can be a folder (all tracks will be played) or a specific story/song. There may be 
+different folders in addition to albumX.
 
 
 ## Howto install using Arduino IDE

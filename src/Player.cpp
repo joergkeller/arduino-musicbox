@@ -142,6 +142,16 @@ void Player::onHeadphoneInserted(bool plugged) {
   player.setVolume(volume, volume);
 }
 
+bool Player::startPlaying(const char* path) {
+  album = SD.open(path);
+  if (album.isDirectory()) {
+    return nextTrack();
+  } else {
+    album.close();
+    return player.startPlayingFile(path);
+  }
+}
+
 bool Player::startFirstTrack(byte albumIndex) {
   // close old album (if any)
   if (album && album.isDirectory()) { album.close(); }
@@ -153,7 +163,7 @@ bool Player::startFirstTrack(byte albumIndex) {
   return nextTrack();
 }
 
-bool Player::startFile(char* trackName) {
+bool Player::startFile(const char* trackName) {
   if (album && album.isDirectory()) { album.close(); }
   return player.startPlayingFile(trackName);
 }
