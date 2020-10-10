@@ -17,6 +17,7 @@ jobs:
           arduino-cli core update-index
           arduino-cli core install arduino:avr@1.8.3
           arduino-cli core install adafruit:avr@1.4.13
+          arduino-cli lib install SD@1.2.4
           
       - name: Prepare code and submodules
         run: |
