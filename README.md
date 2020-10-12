@@ -14,12 +14,12 @@ Hardware parts:
 The control code shall
 * animate the trellis keys while idle
 * read trellis keys
-* on key press play a music file from the micro SD card from a specific folder and blink the respective key
-* on pressing the same key or when playback stops jump to the next file in the folder, until all music is played
+* on key press play a music track from the micro SD card from a configured folder and blink the respective key
+* on pressing the same key or when playback stops jump to the next track in the folder, until all music is played
 * read the rotary decoder to change the volume, the maximum volume can be configured
 * press the rotary decoder to pause/resume (short) and stop/sleep (long)
 * detect when a headphone is plugged in and mute the amplifier for the internal speakers
-* read nfc chips and play the configured file for the given id
+* read nfc chips and play the configured track or album for the given id
 * switch the music box  off automatically after an idle period
 
 ## Checkout this code
@@ -32,15 +32,16 @@ git submodule update
 
 ## Remarks on the hardware
 * See [wiring schema](extras/schema/MusicBox_Schaltplan.pdf)
-* Cut the "RESET" bridge on the Adafruit MusicMaker FeatherWing (otherwise a reset of the mp3 chip will also reset the arduino board).
+* Cut the "RESET" bridge on the Adafruit MusicMaker FeatherWing (otherwise a reset of the mp3 chip will also 
+  reset the arduino board).
 * Set dip switches on the NFC board to use I2C (1: ON, 2: OFF)
 
 ## Prepare micro SD card
 Copy \<musicbox\>/extras/config/*.cfg in root directory of the SD card.\
-Create/fill folders album1 .. album16 with your music files.\
-List NFC id in nfc.cfg.\
-Paths can be a folder (all tracks will be played) or a specific story/song. There may be 
-different folders in addition to albumX.
+Copy music files to the SD card, using 8.3 filenames without special characters.
+Assign paths to buttons in buttons.cfg and NFC ids in nfc.cfg.\
+Paths can be a folder (all tracks will be played) or a specific story/song. Music files can be in subfolders, but
+deeply nested structures should be avoided.
 
 
 ## Howto install using Arduino IDE
@@ -65,3 +66,13 @@ Tools > Ports\
 
 > Verify/Compile\
 > Upload
+
+## Howto install using Arduino CLI
+```
+arduino-cli core update-index
+arduino-cli core install arduino:avr@1.8.3
+arduino-cli core install adafruit:avr@1.4.13
+arduino-cli compile src --fqbn=adafruit:avr:feather32u4
+arduino-cli board list
+arduino-cli upload src --fqbn=adafruit:avr:feather32u4 --port COM4 --verify --verbose
+```

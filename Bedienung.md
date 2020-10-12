@@ -21,9 +21,9 @@ Bemerkung: Innerhalb eines Albums kann nur vorwärts "geblättert" werden. Um wi
 
 ### Musik mit Figur auswählen
 
-In der Konfiguration des Gerätes können NFC-Ids mit einem Musikstück verknüpft werden. Wenn eine Figur oder ein anderer Gegenstand mit einem entsprechenden NFC-Tag auf den Deckel des Musikwürfels gelegt wird, wird das entsprechende Stück abgespielt.
+In der Konfiguration des Gerätes können NFC-Ids mit einem Musikstück bzw. Album verknüpft werden. Wenn eine Figur oder ein anderer Gegenstand mit einem entsprechenden NFC-Tag auf den Deckel des Musikwürfels gelegt wird, wird das entsprechende Stück abgespielt.
 
-Bemerkung: Beim Abspielen eines Stücks über diese Funktion blinkt immer die erste Fronttaste.
+Bemerkung: Beim Abspielen eines Stücks über diese Funktion blinkt immer die erste Fronttaste. Bei einem Album kann mit der ersten Taste auf das nächste Musikstück gewechselt werden.
 
 
 ## Abspielen pausieren oder abbrechen
@@ -66,17 +66,25 @@ Dazu muss die MicroSD-Karte entnommen werden: Deckel auf der Rückseite entferne
 
 Die MicroSD kann direkt, über einen SD-Adapter oder ein Zusatzgerät gelesen/geschrieben werden.
 
-- Musikstücke für die Tasten müssen in einem Verzeichnis mit dem Namen "ALBUM1".."ALBUM16" abgelegt werden. 
-- Musikstücke für Figuren mit NFC-Tags können in einem beliebigen Verzeichnis abgelegt werden. Es kann aber auch ein Stück aus einem der obigen Alben abgespielt werden.
+- Musikstücke können in einem Verzeichnis als Album zusammengefasst und in beliebigen Unterverzeichnissen abgelegt sein.
+- Alben/Musikstücke für die Tasten müssen in der Textdatei ```buttons.cfg``` festgelegt werden. 
+- Alben/Musikstücke für Figuren mit NFC-Tags müssen mit ihrer NFC Id in der Textdatei ```nfc.cfg``` festgelegt werden.
 - Die physische Reihenfolge der Musikstücke ist entscheidend, nicht die Sortierung nach Namen. Um das sicherzustellen, wird am besten ein Musikstück nach dem andern einzeln auf die SD-Karte geschrieben.
-- In der Textdatei nfc.cfg wird für NFC-Ids das entsprechende Musikstück angegeben.
+- Beim Einlesen eines neuen NFC-Tags wird die unbekannte Id in die Textdatei ```nfc.cfg``` geschrieben.
 
-Bemerkung: In der aktuellen Version können nur max. 8 Zeichen pro Verzeichnis/Stück angegeben werden. Für das Abspielen über die Tasten spielt das keine Rolle, aber bei der Angabe für NFC-Ids muss das berücksichtigt werden. Entweder wird der Name des Stücks auf 8 Zeichen gekürzt oder es wird der Kurzname des längeren Stücks ermittelt (Windows/Cmd mit dir /x). Die Längenbeschränkung gilt auch für einzelne Verzeichnisnamen.
+Bemerkung: In der aktuellen Version können nur max. 8 Zeichen pro Verzeichnis/Stück angegeben werden. Entweder wird der Name des Stücks auf 8 Zeichen gekürzt oder es wird der Kurzname des längeren Stücks ermittelt (Windows/Cmd mit ```dir /x```). Die Längenbeschränkung gilt auch für einzelne Verzeichnisnamen.
 
-### Beispiel NFC Konfiguration nfc.cfg
+### Beispiel Konfigurationsfiles 
+NFC Konfiguration ```nfc.cfg```:
 ```
-6738BC0E=ALBUM16/ELI.MP3
-B85D2D35=ALBUM16/FINN.MP3
+6738BC0E=MIGROS/WICHTEL/ELI.MP3
+B85D2D35=MIGROS/WICHTEL/FINN.MP3
+```
+
+Button Konfiguration ```buttons.cfg```:
+```
+3=GLOBI/FEUER
+4=JAMADU
 ```
 
 ### Unterstützte Audio Decoder Formate
@@ -96,5 +104,3 @@ MIDI Instrumente siehe [VS1053 Datenblatt](https://cdn-shop.adafruit.com/datashe
 
 ## Weitere Konfigurationen
 - settings.cfg - wird im Moment nicht unterstützt
-- buttons.cfg - wird im Moment nicht unterstützt
-Alle Konfigurationen werden direkt im Code festgelegt.
