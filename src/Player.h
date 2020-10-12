@@ -43,17 +43,17 @@ class Player {
     void enable(bool enable);
     void changeVolume(int encoderChange);
     void checkHeadphoneLevel();
-  
-    bool startFirstTrack(byte albumIndex);
-    bool startFile(char* trackName);
+
+    bool startPlaying(const char* path);
     bool nextTrack();
     void pause(bool pause);
     void stop();
     bool hasStopped();
 	
   private:
-    const Adafruit_VS1053_FilePlayer player = Adafruit_VS1053_FilePlayer(MUSIC_RESET_PIN, MUSIC_CS_PIN, MUSIC_DCS_PIN, MUSIC_DREQ_PIN, CARD_CS_PIN);
-    
+    Adafruit_VS1053_FilePlayer player = Adafruit_VS1053_FilePlayer(MUSIC_RESET_PIN, MUSIC_CS_PIN, MUSIC_DCS_PIN, MUSIC_DREQ_PIN, CARD_CS_PIN);
+
+    String albumPath = String();
     File album;
     int volume = VOLUME_INITIAL;
     bool headphone = false;
@@ -66,6 +66,7 @@ class Player {
     void enablePlayer(bool enable);
     void enableAmplifier(bool enable);
     void onHeadphoneInserted(bool plugged);
+    String extendPath(String path, String fileName);
 };
 
 #endif

@@ -142,20 +142,15 @@ void Player::onHeadphoneInserted(bool plugged) {
   player.setVolume(volume, volume);
 }
 
-bool Player::startFirstTrack(byte albumIndex) {
-  // close old album (if any)
-  if (album && album.isDirectory()) { album.close(); }
-  // open indexed album
-  int albumNr = albumIndex + 1;
-  String albumTemplate = F("ALBUM");
-  String albumName = albumTemplate + albumNr;
-  album = SD.open(albumName);
-  return nextTrack();
-}
-
-bool Player::startFile(char* trackName) {
-  if (album && album.isDirectory()) { album.close(); }
-  return player.startPlayingFile(trackName);
+bool Player::startPlaying(const char* path) {
+  albumPath = path;
+  album = SD.open(path);
+  if (album.isDirectory()) {
+    return nextTrack(); // first track of album
+  } else {
+    album.close();
+    return player.startPlayingFile(path);
+  }
 }
 
 bool Player::nextTrack() {
@@ -163,14 +158,20 @@ bool Player::nextTrack() {
   File track = album.openNextFile();
   if (!track) return false;
 
-  String albumName = album.name();
-  String dirPath = albumName + '/';
-  String filePath = dirPath + track.name();
+  String filePath = extendPath(albumPath, track.name());
   Serial.print(F("Next track: ")); Serial.println(filePath);
   track.close();
 
   player.startPlayingFile(filePath.c_str());
   return true;
+}
+
+String Player::extendPath(String path, String fileName) {
+  if (path.charAt(path.length() - 1) == '/') {
+    return path + fileName;
+  } else {
+    return path + "/" + fileName;
+  }
 }
 
 void Player::pause(bool pause) {

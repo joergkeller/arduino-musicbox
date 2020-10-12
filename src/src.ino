@@ -28,6 +28,7 @@
 #include <LowPower.h>
 #include <PN532_I2C.h>
 #include <PN532.h>
+#undef NULL
 #include <NfcAdapter.h>
 #include <Properties.h>
 #include "Matrix.h"
@@ -86,7 +87,7 @@ bool tickMs = false;
    Setup
  ****************************************************/
 void setup() {
-  Serial.begin(14400);
+  Serial.begin(19200);
   while (!Serial && millis() < nextIdleTick + 75);
   Serial.println(F("MusicBox setup"));
 
@@ -149,6 +150,11 @@ void onEnterIdle(unsigned int delay) {
 void timerIsr() {
   encoder.service();
   tickMs = true;
+}
+
+void trellisIsr() {
+  matrix.disableInterrupt();
+  state = IDLE;
 }
 
 /***************************************************
@@ -222,11 +228,6 @@ void onTimeout() {
 
 void onWatchdogPing() {
   blinkLED(BLUE_LED_PIN);
-}
-
-void trellisIsr() {
-  matrix.disableInterrupt();
-  state = IDLE;
 }
 
 void onSleepWake() {
@@ -330,15 +331,22 @@ void onKey(byte index) {
 
   // Some (other) key pressed
   } else {
-    if (state == PLAY_SELECTED) player.stop();
-	  matrix.blink(index, true);
+    if (state == PLAY_SELECTED) { player.stop(); }
+    matrix.blink(index, true);
     nextTimeoutTick = 0; // no timeout during playing
     nextNfcTick = 0; // no nfc reading during playing
     enableNfc(false);
-	  player.enable(true);
-	  if (player.startFirstTrack(index)) {
+    player.enable(true);
+
+    File file = SD.open("buttons.cfg");
+    Properties cfg = Properties(file);
+    String key = String(index);
+    String path = cfg.readString(key);
+    file.close();
+    
+    if (path.length() != 0 && player.startPlaying(path.c_str())) {
       state = PLAY_SELECTED;
-	    playingAlbum = index;
+      playingAlbum = index;
       Serial.print(F("Playing album #")); Serial.println(playingAlbum);
     } else {
       Serial.print(F("Failed album #")); Serial.println(playingAlbum);
@@ -354,22 +362,22 @@ void onNfcId(String hexId) {
 
   File file = SD.open("nfc.cfg");
   Properties cfg = Properties(file);
-  String trackName = cfg.readString(hexId);
+  String path = cfg.readString(hexId);
   file.close();
 
-  if (trackName.length() == 0) {
+  if (path.length() == 0) {
     Serial.print(F("Unknown nfc id ")); Serial.println(hexId);
     File file = SD.open("nfc.cfg", FILE_WRITE);
     file.write(hexId.c_str());
     file.write("=\n");
     file.close();
   } else {
-    Serial.print(F("Playing file ")); Serial.println(trackName);
-    onNfcPlay(trackName);
+    Serial.print(F("Playing ")); Serial.println(path);
+    onNfcPlay(path);
   }
 }
 
-void onNfcPlay(String trackName) {
+void onNfcPlay(String path) {
   state = PLAY_SELECTED;
   playingAlbum = 0;
   matrix.blink(playingAlbum, true);
@@ -377,7 +385,7 @@ void onNfcPlay(String trackName) {
   nextNfcTick = 0; // no nfc reading during playing
   enableNfc(false);
   player.enable(true);
-  player.startFile(trackName.c_str());
+  player.startPlaying(path.c_str());
 }
 
 void onTryNextTrack() {
@@ -422,4 +430,3 @@ void enableNfc(bool enable) {
     digitalWrite(NFC_RESET_PIN, LOW);    
   }
 }
-
