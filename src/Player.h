@@ -45,7 +45,6 @@ class Player {
     void checkHeadphoneLevel();
 
     bool startPlaying(const char* path);
-    bool startFirstTrack(byte albumIndex);
     bool nextTrack();
     void pause(bool pause);
     void stop();

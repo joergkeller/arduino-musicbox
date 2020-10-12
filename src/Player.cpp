@@ -146,21 +146,11 @@ bool Player::startPlaying(const char* path) {
   albumPath = path;
   album = SD.open(path);
   if (album.isDirectory()) {
-    return nextTrack();
+    return nextTrack(); // first track of album
   } else {
     album.close();
     return player.startPlayingFile(path);
   }
-}
-
-bool Player::startFirstTrack(byte albumIndex) {
-  // close old album (if any)
-  if (album && album.isDirectory()) { album.close(); }
-  // open indexed album
-  int albumNr = albumIndex + 1;
-  albumPath = String(F("ALBUM")) + albumNr;
-  album = SD.open(String(F("ALBUM")) + albumNr);
-  return nextTrack();
 }
 
 bool Player::nextTrack() {

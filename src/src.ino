@@ -332,14 +332,21 @@ void onKey(byte index) {
   // Some (other) key pressed
   } else {
     if (state == PLAY_SELECTED) { player.stop(); }
-	matrix.blink(index, true);
+    matrix.blink(index, true);
     nextTimeoutTick = 0; // no timeout during playing
     nextNfcTick = 0; // no nfc reading during playing
     enableNfc(false);
-	player.enable(true);
-	if (player.startFirstTrack(index)) {
+    player.enable(true);
+
+    File file = SD.open("buttons.cfg");
+    Properties cfg = Properties(file);
+    String key = String(index);
+    String path = cfg.readString(key);
+    file.close();
+    
+    if (path.length() != 0 && player.startPlaying(path.c_str())) {
       state = PLAY_SELECTED;
-	  playingAlbum = index;
+      playingAlbum = index;
       Serial.print(F("Playing album #")); Serial.println(playingAlbum);
     } else {
       Serial.print(F("Failed album #")); Serial.println(playingAlbum);
