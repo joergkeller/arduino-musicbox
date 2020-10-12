@@ -46,7 +46,6 @@ class Player {
 
     bool startPlaying(const char* path);
     bool startFirstTrack(byte albumIndex);
-    bool startFile(const char* trackName); // obsolete?
     bool nextTrack();
     void pause(bool pause);
     void stop();
@@ -54,7 +53,8 @@ class Player {
 	
   private:
     Adafruit_VS1053_FilePlayer player = Adafruit_VS1053_FilePlayer(MUSIC_RESET_PIN, MUSIC_CS_PIN, MUSIC_DCS_PIN, MUSIC_DREQ_PIN, CARD_CS_PIN);
-    
+
+    String albumPath = String();
     File album;
     int volume = VOLUME_INITIAL;
     bool headphone = false;
@@ -67,6 +67,7 @@ class Player {
     void enablePlayer(bool enable);
     void enableAmplifier(bool enable);
     void onHeadphoneInserted(bool plugged);
+    String extendPath(String path, String fileName);
 };
 
 #endif
